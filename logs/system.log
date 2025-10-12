@@ -1,0 +1,8 @@
+[2025-10-12 20:15:46] action=AUTH_ERROR user_id=NULL message=DB error during authenticate
+[2025-10-12 20:16:02] action=AUTH_ERROR user_id=NULL message=DB error during authenticate
+[2025-10-12 20:16:50] action=AUTH_ERROR user_id=NULL message=DB error during authenticate
+[2025-10-12 20:17:42] action=AUTH_ERROR user_id=NULL message=DB error during authenticate
+[2025-10-12 20:18:07] action=AUTH_ERROR user_id=NULL message=DB error during authenticate
+[2025-10-12 20:18:35] action=LOGIN user_id=1 message=auth_event
+[2025-10-12 20:21:03] action=LOGOUT user_id=1 message=auth_event
+[2025-10-12 20:21:20] action=LOGIN user_id=1 message=auth_event

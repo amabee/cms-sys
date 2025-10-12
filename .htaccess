@@ -1,0 +1,13 @@
+RewriteEngine On
+
+# Map pretty role-based URLs to index.php
+RewriteRule ^(admin|doctor|secretary|receptionist|patient)/([^/]+)/?$ index.php?role=$1&page=$2 [QSA,L]
+
+# Basic security: prevent directory listing
+Options -Indexes
+
+# Deny access to sensitive files
+<FilesMatch "\.(env|sql|ini|bak|log)$">
+	Require all denied
+</FilesMatch>
+
