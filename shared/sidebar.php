@@ -105,6 +105,14 @@ if (isset($page_aliases[$current_page])) {
           <div data-i18n="Patients">Patients</div>
         </a>
       </li>
+      <?php if ($user_type === 'doctor'): ?>
+      <li class="menu-item <?php echo isMenuActive('doctor-patient-search', $current_page); ?>">
+        <a href="./doctor-patient-search.php" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-search-alt"></i>
+          <div data-i18n="Search Patients">Search Patients</div>
+        </a>
+      </li>
+      <?php endif; ?>
       <li class="menu-item <?php echo isMenuActive('appointments', $current_page); ?>">
         <a href="./appointments.php" class="menu-link">
           <i class="menu-icon tf-icons bx bx-calendar"></i>
@@ -129,6 +137,22 @@ if (isset($page_aliases[$current_page])) {
           <div data-i18n="Prescriptions">Prescriptions</div>
         </a>
       </li>
+      <?php if (in_array($user_type, ['admin', 'doctor'])): ?>
+      <li class="menu-item <?php echo isMenuActive('reports', $current_page); ?>">
+        <a href="./reports.php" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
+          <div data-i18n="Reports">Reports</div>
+        </a>
+      </li>
+      <?php endif; ?>
+      <?php if (in_array($user_type, ['admin', 'doctor', 'receptionist'])): ?>
+      <li class="menu-item <?php echo isMenuActive('notifications', $current_page); ?>">
+        <a href="./notifications.php" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-bell"></i>
+          <div data-i18n="Notifications">Notifications</div>
+        </a>
+      </li>
+      <?php endif; ?>
     <?php endif; ?>
 
     <!-- Patient Portal -->
@@ -171,6 +195,24 @@ if (isset($page_aliases[$current_page])) {
         <a href="./invoices.php" class="menu-link">
           <i class="menu-icon tf-icons bx bx-receipt"></i>
           <div data-i18n="Invoices">Invoices</div>
+        </a>
+      </li>
+      <li class="menu-item <?php echo isMenuActive('reports', $current_page); ?>">
+        <a href="./reports.php" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-bar-chart-alt-2"></i>
+          <div data-i18n="Reports">Reports</div>
+        </a>
+      </li>
+      <li class="menu-item <?php echo isMenuActive('notifications', $current_page); ?>">
+        <a href="./notifications.php" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-bell"></i>
+          <div data-i18n="Notifications">Notifications</div>
+        </a>
+      </li>
+      <li class="menu-item <?php echo isMenuActive('security-management', $current_page); ?>">
+        <a href="./security-management.php" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-shield"></i>
+          <div data-i18n="Security">Security</div>
         </a>
       </li>
       <li class="menu-item <?php echo isMenuActive('system-settings', $current_page); ?>">

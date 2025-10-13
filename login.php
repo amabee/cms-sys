@@ -18,6 +18,11 @@ $system_details = $systemController->getSystemDetails();
 $error_message = '';
 $success_message = '';
 
+// Check for logout confirmation
+if (isset($_GET['logged_out']) && $_GET['logged_out'] == '1') {
+  $success_message = 'You have been logged out successfully.';
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $username = sanitize($_POST['email'] ?? '');

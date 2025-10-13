@@ -8,30 +8,55 @@ class AppointmentsController {
         if (function_exists('getDBConnection')) $this->db = getDBConnection(); else $this->db = null;
     }
 
-    public function listForDataTable($request) {
+    public function listForDataTable($request, $doctor_id = null) {
         $draw = isset($request['draw']) ? (int)$request['draw'] : null;
         $start = isset($request['start']) ? (int)$request['start'] : 0;
         $length = isset($request['length']) ? (int)$request['length'] : 10;
 
         $where = '';
         $params = [];
+        
+        // Add doctor filter if specified
+        if ($doctor_id) {
+            $where = "WHERE a.doctor_id = :doctor_id";
+            $params[':doctor_id'] = $doctor_id;
+        }
+        
+        // Add search filter
         if (!empty($request['search']) && is_array($request['search']) && isset($request['search']['value'])) {
             $q = trim($request['search']['value']);
             if ($q !== '') {
-                $where = "WHERE (a.appointment_id LIKE :q OR p.first_name LIKE :q OR p.last_name LIKE :q OR u.first_name LIKE :q OR u.last_name LIKE :q OR a.status LIKE :q)";
+                $searchWhere = "(a.appointment_id LIKE :q OR p.first_name LIKE :q OR p.last_name LIKE :q OR u.first_name LIKE :q OR u.last_name LIKE :q OR a.status LIKE :q)";
+                if ($where) {
+                    $where .= " AND " . $searchWhere;
+                } else {
+                    $where = "WHERE " . $searchWhere;
+                }
                 $params[':q'] = "%$q%";
             }
         }
 
         if (!$this->db) return ['draw'=>$draw,'recordsTotal'=>0,'recordsFiltered'=>0,'data'=>[]];
 
-        $total = (int)$this->db->query('SELECT COUNT(*) FROM appointments')->fetchColumn();
+        // Calculate total records
+        if ($doctor_id) {
+            $totalStmt = $this->db->prepare('SELECT COUNT(*) FROM appointments WHERE doctor_id = :doctor_id');
+            $totalStmt->bindValue(':doctor_id', $doctor_id, PDO::PARAM_INT);
+            $totalStmt->execute();
+            $total = (int)$totalStmt->fetchColumn();
+        } else {
+            $total = (int)$this->db->query('SELECT COUNT(*) FROM appointments')->fetchColumn();
+        }
+        
+        // Calculate filtered records
         if ($where !== '') {
             $stmt = $this->db->prepare("SELECT COUNT(*) FROM appointments a JOIN patients p ON a.patient_id = p.id JOIN doctors d ON a.doctor_id = d.id JOIN users u ON d.user_id = u.id $where");
             foreach ($params as $k=>$v) $stmt->bindValue($k,$v);
             $stmt->execute();
             $recordsFiltered = (int)$stmt->fetchColumn();
-        } else $recordsFiltered = $total;
+        } else {
+            $recordsFiltered = $total;
+        }
 
         $orderSql = 'ORDER BY a.appointment_date DESC, a.appointment_time DESC';
         if (isset($request['order']) && isset($request['columns'])) {

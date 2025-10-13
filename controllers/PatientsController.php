@@ -72,7 +72,26 @@ class PatientsController {
             if (count($orderParts) > 0) $orderSql = 'ORDER BY ' . implode(', ', $orderParts);
         }
 
-        $sql = "SELECT id, patient_id, first_name, last_name, email, phone, date_of_birth, gender, is_active FROM patients $where $orderSql LIMIT :start, :length";
+        // Updated SQL to include last visit date from appointments table
+        $sql = "
+            SELECT 
+                p.id, 
+                p.patient_id, 
+                p.first_name, 
+                p.last_name, 
+                p.email, 
+                p.phone, 
+                p.date_of_birth, 
+                p.gender, 
+                p.is_active,
+                MAX(a.appointment_date) as last_visit_date
+            FROM patients p
+            LEFT JOIN appointments a ON p.id = a.patient_id AND a.status IN ('completed', 'in_progress')
+            $where
+            GROUP BY p.id, p.patient_id, p.first_name, p.last_name, p.email, p.phone, p.date_of_birth, p.gender, p.is_active
+            $orderSql 
+            LIMIT :start, :length
+        ";
         $stmt = $this->db->prepare($sql);
         foreach ($params as $k => $v) $stmt->bindValue($k, $v);
         $stmt->bindValue(':start', (int)$start, PDO::PARAM_INT);
@@ -91,7 +110,8 @@ class PatientsController {
                 'phone' => $r['phone'],
                 'date_of_birth' => $r['date_of_birth'],
                 'gender' => $r['gender'],
-                'is_active' => $r['is_active']
+                'is_active' => $r['is_active'],
+                'last_visit_date' => $r['last_visit_date']
             ];
         }
 

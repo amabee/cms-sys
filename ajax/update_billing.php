@@ -1,0 +1,50 @@
+<?php
+header('Content-Type: application/json; charset=utf-8');
+require_once __DIR__ . '/../shared/session_handler.php';
+require_once __DIR__ . '/../controllers/BillingController.php';
+
+if (!isset($user_id)) {
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    exit();
+}
+
+// Only allow authorized roles
+if (!in_array($user_type, ['admin', 'secretary', 'receptionist'])) {
+    echo json_encode(['success' => false, 'message' => 'Access denied']);
+    exit();
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    echo json_encode(['success' => false, 'message' => 'Invalid request method']);
+    exit();
+}
+
+$billing_id = $_POST['billing_id'] ?? null;
+
+if (!$billing_id) {
+    echo json_encode(['success' => false, 'message' => 'Billing ID is required']);
+    exit();
+}
+
+try {
+    $data = json_decode(file_get_contents('php://input'), true);
+    
+    if (!$data) {
+        // Fallback to POST data if JSON decode fails
+        $data = $_POST;
+    }
+    
+    $controller = new BillingController();
+    $result = $controller->update($billing_id, $data);
+    
+    if ($result['success']) {
+        echo json_encode(['success' => true, 'message' => 'Billing record updated successfully']);
+    } else {
+        echo json_encode(['success' => false, 'message' => $result['message']]);
+    }
+    
+} catch (Exception $e) {
+    error_log('[ajax/update_billing] Exception: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'An error occurred while updating billing record']);
+}
+?>

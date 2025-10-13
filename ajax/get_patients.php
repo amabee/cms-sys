@@ -38,7 +38,20 @@ if (!$db) {
 
 try {
     $ctrl = new PatientsController();
-    $result = $ctrl->listForDataTable($_GET);
+    
+    // Check for simple search parameter (used by doctor dashboard)
+    if (isset($_GET['search']) && is_string($_GET['search'])) {
+        // Convert simple search to DataTable format
+        $searchRequest = [
+            'draw' => 1,
+            'start' => 0,
+            'length' => 50, // Limit search results
+            'search' => ['value' => $_GET['search']]
+        ];
+        $result = $ctrl->listForDataTable($searchRequest);
+    } else {
+        $result = $ctrl->listForDataTable($_GET);
+    }
 } catch (Exception $e) {
     $result = ['draw' => $draw, 'recordsTotal' => 0, 'recordsFiltered' => 0, 'data' => []];
 }

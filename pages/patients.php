@@ -40,6 +40,7 @@ ob_start();
               <th>Email</th>
               <th>Phone</th>
               <th>Date of Birth</th>
+              <th>Last Visit</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -120,12 +121,88 @@ ob_start();
         { data: 'email' },
         { data: 'phone' },
         { data: 'date_of_birth' },
-        { data: null, orderable: false, render: function (data) { return `<button class="btn btn-sm btn-outline-primary view-patient" data-id="${data.id}">View</button>`; } }
+        { 
+          data: 'last_visit_date', 
+          render: function (data, type, row) { 
+            if (!data) return '<span class="text-muted">Never</span>';
+            const date = new Date(data);
+            const today = new Date();
+            const diffTime = Math.abs(today - date);
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            let timeAgo = '';
+            if (diffDays === 0) {
+              timeAgo = 'Today';
+            } else if (diffDays === 1) {
+              timeAgo = 'Yesterday';
+            } else if (diffDays <= 7) {
+              timeAgo = `${diffDays} days ago`;
+            } else if (diffDays <= 30) {
+              timeAgo = `${Math.floor(diffDays/7)} weeks ago`;
+            } else if (diffDays <= 365) {
+              timeAgo = `${Math.floor(diffDays/30)} months ago`;
+            } else {
+              timeAgo = `${Math.floor(diffDays/365)} years ago`;
+            }
+            
+            return `<div>
+              <div class="fw-medium">${date.toLocaleDateString()}</div>
+              <small class="text-muted">${timeAgo}</small>
+            </div>`;
+          }
+        },
+        { 
+          data: null, 
+          orderable: false, 
+          render: function (data) { 
+            return `<div class="btn-group">
+              <button class="btn btn-sm btn-outline-primary view-patient" data-id="${data.id}" title="View Details">
+                <i class="bx bx-show"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-success add-to-queue-btn" data-id="${data.id}" title="Add to Queue">
+                <i class="bx bx-plus"></i>
+              </button>
+            </div>`; 
+          } 
+        }
       ]
     });
 
     $('#patientsSearchBtn').on('click', function () { table.ajax.reload(); });
     $('#patientsSearch').on('keypress', function (e) { if (e.key === 'Enter') { table.ajax.reload(); } });
+    
+    // Add to queue functionality for receptionist
+    $('#patientsTable').on('click', '.add-to-queue-btn', function () {
+      const patientId = $(this).data('id');
+      
+      $.post('../ajax/add_to_queue.php', {
+        patient_id: patientId
+      })
+      .done(function(response) {
+        if (response.success) {
+          Swal.fire({
+            icon: 'success',
+            title: 'Added to Queue',
+            text: 'Patient has been added to the queue successfully.',
+            timer: 2000,
+            showConfirmButton: false
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'Failed',
+            text: response.message || 'Failed to add patient to queue'
+          });
+        }
+      })
+      .fail(function() {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: 'Connection error. Please try again.'
+        });
+      });
+    });
 
     // submit new patient
     $('#submitAddPatient').on('click', function () {
@@ -214,14 +291,32 @@ ob_start();
               </div>
               <div class="card">
                 <div class="card-body">
-                  <h6 class="card-title">Notes</h6>
-                  <p class="mb-0 small text-muted">${p.medical_history? p.medical_history.substring(0,300):''}</p>
+                  <h6 class="card-title">Visit History</h6>
+                  <div id="visitHistoryContainer">
+                    <div class="text-center py-2 text-muted">
+                      <small>Loading visit history...</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="row mt-3">
+            <div class="col-12">
+              <div class="card">
+                <div class="card-body">
+                  <h6 class="card-title">Medical Notes</h6>
+                  <p class="mb-0 small text-muted">${p.medical_history || 'No medical history recorded'}</p>
                 </div>
               </div>
             </div>
           </div>
           `;
           $('#viewPatientBody').html(html);
+          
+          // Load visit history
+          loadPatientVisitHistory(p.id);
+          
           // store current patient id on modal for new appointment
           $('#viewPatientModal').data('patient-id', p.id);
           // keep current patient in JS for editing
@@ -383,6 +478,65 @@ ob_start();
         Swal.fire({ icon: 'error', title: 'Create failed', text: 'Server error' });
       });
     });
+
+    // Function to load patient visit history
+    function loadPatientVisitHistory(patientId) {
+      const container = $('#visitHistoryContainer');
+      
+      $.get('../ajax/get_patient_visits.php', { patient_id: patientId })
+        .done(function(response) {
+          if (response.success && response.data && response.data.length > 0) {
+            let html = '';
+            response.data.forEach(function(visit) {
+              const date = new Date(visit.appointment_date);
+              const timeAgo = getTimeAgo(date);
+              
+              html += `
+                <div class="d-flex justify-content-between align-items-center py-1 border-bottom">
+                  <div>
+                    <div class="fw-medium">${date.toLocaleDateString()}</div>
+                    <small class="text-muted">${visit.doctor_name || 'Unknown Doctor'}</small>
+                  </div>
+                  <div class="text-end">
+                    <span class="badge bg-${getStatusColor(visit.status)}">${visit.status}</span>
+                    <div><small class="text-muted">${timeAgo}</small></div>
+                  </div>
+                </div>
+              `;
+            });
+            container.html(html);
+          } else {
+            container.html('<div class="text-center py-2 text-muted"><small>No visit history</small></div>');
+          }
+        })
+        .fail(function() {
+          container.html('<div class="text-center py-2 text-danger"><small>Failed to load visit history</small></div>');
+        });
+    }
+
+    function getTimeAgo(date) {
+      const now = new Date();
+      const diffTime = Math.abs(now - date);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays <= 7) return `${diffDays} days ago`;
+      if (diffDays <= 30) return `${Math.floor(diffDays/7)} weeks ago`;
+      if (diffDays <= 365) return `${Math.floor(diffDays/30)} months ago`;
+      return `${Math.floor(diffDays/365)} years ago`;
+    }
+
+    function getStatusColor(status) {
+      const colors = {
+        'completed': 'success',
+        'in_progress': 'warning',
+        'scheduled': 'primary',
+        'cancelled': 'danger',
+        'no_show': 'secondary'
+      };
+      return colors[status] || 'secondary';
+    }
   });
 </script>
 
