@@ -7,3 +7,8 @@
 [2025-10-12 20:21:03] action=LOGOUT user_id=1 message=auth_event
 [2025-10-12 20:21:20] action=LOGIN user_id=1 message=auth_event
 [2025-10-13 19:04:41] action=LOGIN user_id=1 message=auth_event
+[2025-10-13 22:55:08] action=Failed to get notification statistics: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'clinic_cms.notifications' doesn't exist user_id=ERROR message=
+[2025-10-13 22:55:08] action=Failed to get notifications: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near ''50' OFFSET '0'' at line 12 user_id=ERROR message=
+[2025-10-13 22:55:14] action=Failed to get notifications: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near ''50' OFFSET '0'' at line 12 user_id=ERROR message=
+[2025-10-13 22:55:15] action=Failed to get notifications: SQLSTATE[42000]: Syntax error or access violation: 1064 You have an error in your SQL syntax; check the manual that corresponds to your MySQL server version for the right syntax to use near ''50' OFFSET '0'' at line 12 user_id=ERROR message=
+[2025-10-13 22:55:16] action=Failed to get templates: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'clinic_cms.notification_templates' doesn't exist user_id=ERROR message=
