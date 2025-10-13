@@ -1,73 +1,323 @@
 <?php
-$page_title = 'System Settings';
-$additional_css = [
-  'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css'
-];
-$additional_js = [
-  'https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js'
-];
+require_once 'shared/header.php';
+require_once 'controllers/SystemSettingsController.php';
 
-include __DIR__ . '/../shared/session_handler.php';
-
-// Check admin access
-if (!isset($user_id)) {
-  header('Location: login.php');
-  exit();
+// Check if user has admin access
+if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'manager'])) {
+    header("Location: dashboard.php");
+    exit();
 }
 
-ob_start();
+// Initialize controller
+$controller = new SystemSettingsController($conn);
+$categories = $controller->getConfigurationCategories();
+$systemStats = $controller->getSystemStatistics();
 ?>
 
-<div class="row">
-  <!-- Welcome Card -->
-  <div class="col-12 mb-4">
-    <div class="card">
-      <div class="d-flex align-items-start row">
-        <div class="col-sm-7">
-          <div class="card-body">
-            <h5 class="card-title text-primary mb-3">System Settings ⚙️</h5>
-            <p class="mb-4">
-              Manage your company information and system settings from this centralized dashboard.
-            </p>
-          </div>
-        </div>
-        <div class="col-sm-5 text-center text-sm-left">
-          <div class="card-body pb-0 px-0 px-md-4">
-            <img src="../assets/img/illustrations/security.jpg" height="170" alt="Settings">
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- System Statistics -->
-  <div class="col-12 mb-4">
-    <div class="card">
-      <div class="card-header">
-        <h5 class="m-0"><i class="bx bx-stats me-2"></i>System Overview</h5>
-      </div>
-      <div class="card-body">
-        <div class="row text-center">
-          <div class="col-md-3 mb-3">
-            <div class="d-flex flex-column">
-              <div class="avatar mx-auto mb-2">
-                <span class="avatar-initial rounded-circle bg-label-primary">
-                  <i class="bx bx-user fs-4"></i>
-                </span>
-              </div>
-              <span class="fw-medium" id="totalUsers">-</span>
-              <small class="text-muted">Total Users</small>
+<div class="content-wrapper">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">System Settings</h1>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
+                        <li class="breadcrumb-item active">System Settings</li>
+                    </ol>
+                </div>
             </div>
-          </div>
-          <div class="col-md-3 mb-3">
-            <div class="d-flex flex-column">
-              <div class="avatar mx-auto mb-2">
-                <span class="avatar-initial rounded-circle bg-label-success">
-                  <i class="bx bx-group fs-4"></i>
-                </span>
-              </div>
-              <span class="fw-medium" id="totalEmployees">-</span>
-              <small class="text-muted">Active Employees</small>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            <!-- System Overview -->
+            <div class="row mb-4">
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-info">
+                        <div class="inner">
+                            <h3><?= $systemStats['data']['active_users'] ?? 'N/A' ?></h3>
+                            <p>Active Users</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-success">
+                        <div class="inner">
+                            <h3><?= $systemStats['data']['database_size'] ?? 'N/A' ?></h3>
+                            <p>Database Size</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-warning">
+                        <div class="inner">
+                            <h3><?= $systemStats['data']['recent_backups'] ?? 'N/A' ?></h3>
+                            <p>Recent Backups</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-save"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="small-box bg-danger">
+                        <div class="inner">
+                            <h3><?= $systemStats['data']['system_uptime'] ?? 'N/A' ?></h3>
+                            <p>System Uptime</p>
+                        </div>
+                        <div class="icon">
+                            <i class="fas fa-server"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main Settings Interface -->
+            <div class="row">
+                <!-- Settings Categories -->
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Configuration Categories</h3>
+                        </div>
+                        <div class="card-body p-0">
+                            <ul class="nav nav-pills flex-column" id="settingsCategories">
+                                <?php if ($categories['success']): ?>
+                                    <?php foreach ($categories['data'] as $category): ?>
+                                        <li class="nav-item">
+                                            <a class="nav-link settings-category" 
+                                               href="#" 
+                                               data-category="<?= htmlspecialchars($category['category_name']) ?>">
+                                                <i class="<?= htmlspecialchars($category['icon']) ?>"></i>
+                                                <?= htmlspecialchars($category['display_name']) ?>
+                                            </a>
+                                        </li>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                                
+                                <!-- Additional management options -->
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" id="backupManagementTab">
+                                        <i class="fas fa-database"></i>
+                                        Backup Management
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" id="maintenanceTab">
+                                        <i class="fas fa-tools"></i>
+                                        Maintenance
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" id="systemActivityTab">
+                                        <i class="fas fa-history"></i>
+                                        System Activity
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" href="#" id="emailTemplatesTab">
+                                        <i class="fas fa-envelope-open-text"></i>
+                                        Email Templates
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Content -->
+                <div class="col-md-9">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title" id="settingsTitle">Select a Category</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-success btn-sm" id="saveAllSettings" style="display: none;">
+                                    <i class="fas fa-save"></i> Save Changes
+                                </button>
+                                <button type="button" class="btn btn-info btn-sm" id="testEmailConfig" style="display: none;">
+                                    <i class="fas fa-paper-plane"></i> Test Email
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body" id="settingsContent">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-cogs fa-3x mb-3"></i>
+                                <p>Please select a configuration category from the left sidebar to view and modify settings.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storage Usage Card -->
+            <div class="row mt-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Storage Usage</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="progress mb-3">
+                                <div class="progress-bar" role="progressbar" 
+                                     style="width: <?= $systemStats['data']['storage_percentage'] ?? 0 ?>%">
+                                    <?= $systemStats['data']['storage_percentage'] ?? 0 ?>%
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="description-block">
+                                        <h5 class="description-header"><?= $systemStats['data']['storage_used'] ?? 'N/A' ?></h5>
+                                        <span class="description-text">USED</span>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="description-block">
+                                        <h5 class="description-header"><?= $systemStats['data']['storage_total'] ?? 'N/A' ?></h5>
+                                        <span class="description-text">TOTAL</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">Quick Actions</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-primary btn-block mb-2" id="createBackupBtn">
+                                        <i class="fas fa-database"></i> Create Backup
+                                    </button>
+                                    <button type="button" class="btn btn-warning btn-block mb-2" id="clearLogsBtn">
+                                        <i class="fas fa-trash"></i> Clear Old Logs
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <button type="button" class="btn btn-info btn-block mb-2" id="optimizeDatabaseBtn">
+                                        <i class="fas fa-tachometer-alt"></i> Optimize Database
+                                    </button>
+                                    <button type="button" class="btn btn-success btn-block mb-2" id="exportSettingsBtn">
+                                        <i class="fas fa-download"></i> Export Settings
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+<!-- Backup Creation Modal -->
+<div class="modal fade" id="backupModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Create System Backup</h4>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="backupForm">
+                    <div class="form-group">
+                        <label for="backupType">Backup Type</label>
+                        <select class="form-control" id="backupType" name="backup_type" required>
+                            <option value="full">Full Backup (Database + Files)</option>
+                            <option value="database">Database Only</option>
+                            <option value="files">Files Only</option>
+                            <option value="configuration">Configuration Only</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="compressBackup" name="compress" checked>
+                            <label class="custom-control-label" for="compressBackup">Compress backup</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <div class="custom-control custom-checkbox">
+                            <input type="checkbox" class="custom-control-input" id="encryptBackup" name="encrypt">
+                            <label class="custom-control-label" for="encryptBackup">Encrypt backup</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="startBackupBtn">
+                    <i class="fas fa-database"></i> Start Backup
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Email Test Modal -->
+<div class="modal fade" id="emailTestModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h4 class="modal-title">Test Email Configuration</h4>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="emailTestForm">
+                    <div class="form-group">
+                        <label for="testEmailAddress">Test Email Address</label>
+                        <input type="email" class="form-control" id="testEmailAddress" name="email" 
+                               placeholder="Enter email address to test" required>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        A test email will be sent to verify your email configuration settings.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="sendTestEmailBtn">
+                    <i class="fas fa-paper-plane"></i> Send Test Email
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-backdrop="static" data-keyboard="false">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="sr-only">Loading...</span>
+                </div>
+                <p class="mt-2" id="loadingMessage">Processing...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include JavaScript -->
+<script src="assets/js/system-settings.js"></script>
+
+<?php require_once 'shared/footer.php'; ?>
             </div>
           </div>
           <div class="col-md-3 mb-3">
