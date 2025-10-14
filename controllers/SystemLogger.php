@@ -24,14 +24,22 @@ class SystemLogger
     public function log($userId, $action, $message = null)
     {
         $time = date('Y-m-d H:i:s');
-        $entry = "[$time] action=$action user_id=" . ($userId ?? 'NULL') . " message=" . ($message ?? '') . PHP_EOL;
+        
+        // Handle array messages by converting to JSON
+        $messageStr = $message;
+        if (is_array($message)) {
+            $messageStr = json_encode($message);
+        }
+        
+        $entry = "[$time] action=$action user_id=" . ($userId ?? 'NULL') . " message=" . ($messageStr ?? '') . PHP_EOL;
         @file_put_contents($this->logFile, $entry, FILE_APPEND | LOCK_EX);
 
         // attempt to write to audit_log table if DB available
         if ($this->db) {
             try {
                 $stmt = $this->db->prepare('INSERT INTO audit_log (user_id, action, table_name, record_id, new_values, created_at) VALUES (?, ?, ?, ?, ?, ?)');
-                $stmt->execute([$userId, $action, null, null, json_encode(['message' => $message]), $time]);
+                $newValues = is_array($message) ? json_encode($message) : json_encode(['message' => $message]);
+                $stmt->execute([$userId, $action, null, null, $newValues, $time]);
             } catch (Exception $e) {
                 // ignore db errors
             }

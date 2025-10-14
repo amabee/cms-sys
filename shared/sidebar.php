@@ -40,6 +40,7 @@ $page_aliases = [
   'index' => 'dashboard',
   'home' => 'dashboard',
   'user-management' => 'user-management',
+  'users-new' => 'users-new',
   'system-settings' => 'system-settings',
   'attendance' => 'attendance',
   'leaves' => 'leaves',
@@ -174,9 +175,9 @@ if (isset($page_aliases[$current_page])) {
       <li class="menu-header small text-uppercase">
         <span class="menu-header-text">Administration</span>
       </li>
-      <li class="menu-item <?php echo isMenuActive('user-management', $current_page); ?>">
-        <a href="./user-management.php" class="menu-link">
-          <i class='menu-icon tf-icons bx  bx-user'  ></i>
+      <li class="menu-item <?php echo isMenuActive(['user-management', 'users-new'], $current_page); ?>">
+        <a href="./users-new.php" class="menu-link">
+          <i class='menu-icon tf-icons bx bx-users'></i>
           <div data-i18n="Users">User Management</div>
         </a>
       </li>
@@ -184,6 +185,18 @@ if (isset($page_aliases[$current_page])) {
         <a href="./doctors.php" class="menu-link">
           <i class="menu-icon tf-icons bx bx-user-check"></i>
           <div data-i18n="Doctors">Doctors</div>
+        </a>
+      </li>
+      <li class="menu-item <?php echo isMenuActive('receptionists', $current_page); ?>">
+        <a href="./receptionists.php" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-user-voice"></i>
+          <div data-i18n="Receptionists">Receptionists</div>
+        </a>
+      </li>
+      <li class="menu-item <?php echo isMenuActive('secretaries', $current_page); ?>">
+        <a href="./secretaries.php" class="menu-link">
+          <i class="menu-icon tf-icons bx bx-user-pin"></i>
+          <div data-i18n="Secretaries">Secretaries</div>
         </a>
       </li>
       <li class="menu-item <?php echo isMenuActive('billing', $current_page); ?>">

@@ -1,2 +1,11 @@
 [2025-10-14 12:43:34] action=Failed to save template: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'appointment_reminder_email' for key 'notification_templates.template_code' user_id=ERROR message=
 [2025-10-14 12:46:09] action=Failed to update template: SQLSTATE[23000]: Integrity constraint violation: 1062 Duplicate entry 'appointment_reminder_email' for key 'notification_templates.template_code' user_id=ERROR message=
+[2025-10-14 13:45:41] action=login user_id=NULL message=Failed to update last_login
+[2025-10-14 13:45:41] action=LOGIN user_id=1 message=auth_event
+[2025-10-14 14:07:10] action=User deactivated: dr.smith (ID: 2) user_id=INFO message=
+[2025-10-14 14:09:02] action=User activated: dr.smith (ID: 2) user_id=INFO message=
+[2025-10-14 16:16:19] action=login user_id=NULL message=Failed to update last_login
+[2025-10-14 16:16:19] action=LOGIN user_id=1 message=auth_event
+[2025-10-14 17:33:47] action=User created: vusoqi (ID: 6) user_id=INFO message=Array
+[2025-10-14 17:35:41] action=User created: gohycojeri (ID: 7) user_id=INFO message={"user_id":"7","role":"receptionist"}
+[2025-10-14 17:48:31] action=User created: sypixifody (ID: 8) user_id=INFO message={"user_id":"8","role":"secretary"}

@@ -532,17 +532,14 @@ function loadTemplates() {
 
 // Display templates
 function displayTemplates(templates) {
-    console.log('displayTemplates called with:', templates); // Debug log
     const tbody = $('#templates-table tbody');
-    console.log('tbody element:', tbody.length); // Debug log
     tbody.empty();
     
     if (!templates || templates.length === 0) {
         tbody.html('<tr><td colspan="5" class="text-center text-muted">No templates found</td></tr>');
         return;
     }
-    
-    console.log('Processing', templates.length, 'templates'); // Debug log
+
     templates.forEach(template => {
         const row = `
             <tr>
@@ -582,10 +579,6 @@ function saveTemplate() {
     
     // Use global variable instead of DOM element
     const templateId = currentEditingTemplateId || $('#template-id').val();
-    console.log('DEBUG: saveTemplate() called');
-    console.log('DEBUG: currentEditingTemplateId:', currentEditingTemplateId);
-    console.log('DEBUG: templateId from DOM:', $('#template-id').val());
-    console.log('DEBUG: final templateId:', templateId);
     
     const data = {
         name: $('#template-name').val(),
@@ -598,14 +591,11 @@ function saveTemplate() {
     // Include id in payload if present so server can choose update vs create
     if (templateId && templateId !== '' && templateId !== '0') {
         data.id = templateId;
-        console.log('DEBUG: Added id to data payload:', data.id);
     } else {
         console.log('DEBUG: templateId is empty/falsy, not adding to payload');
     }
     
-    console.log('DEBUG: Full payload being sent:', data);
-    
-    // Always use the save endpoint - it handles both create and update based on presence of id
+
     $.ajax({
         url: '../ajax/save_notification_template.php',
         type: 'POST',

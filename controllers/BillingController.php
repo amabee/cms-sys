@@ -334,9 +334,9 @@ class BillingController {
             $sql = "
                 SELECT 
                     COUNT(*) as total_bills,
-                    SUM(total_amount) as total_billed,
-                    SUM(paid_amount) as total_paid,
-                    SUM(balance_amount) as total_outstanding,
+                    COALESCE(SUM(total_amount), 0) as total_billed,
+                    COALESCE(SUM(paid_amount), 0) as total_paid,
+                    COALESCE(SUM(balance_amount), 0) as total_outstanding,
                     SUM(CASE WHEN payment_status = 'paid' THEN 1 ELSE 0 END) as paid_bills,
                     SUM(CASE WHEN payment_status = 'pending' THEN 1 ELSE 0 END) as pending_bills,
                     SUM(CASE WHEN payment_status = 'overdue' THEN 1 ELSE 0 END) as overdue_bills
@@ -345,11 +345,34 @@ class BillingController {
             ";
 
             $stmt = $this->db->query($sql);
-            return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Return default values if no data
+            if (!$result) {
+                return [
+                    'total_bills' => 0,
+                    'total_billed' => 0,
+                    'total_paid' => 0,
+                    'total_outstanding' => 0,
+                    'paid_bills' => 0,
+                    'pending_bills' => 0,
+                    'overdue_bills' => 0
+                ];
+            }
+            
+            return $result;
 
         } catch (Exception $e) {
             error_log('[BillingController::getStatistics] ' . $e->getMessage());
-            return [];
+            return [
+                'total_bills' => 0,
+                'total_billed' => 0,
+                'total_paid' => 0,
+                'total_outstanding' => 0,
+                'paid_bills' => 0,
+                'pending_bills' => 0,
+                'overdue_bills' => 0
+            ];
         }
     }
 

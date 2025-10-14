@@ -17,6 +17,7 @@ return [
   'dashboard_employee.php' => ['receptionist', 'secretary'],
   'profile.php' => ['admin', 'doctor', 'secretary', 'receptionist', 'patient'],
   'security-management.php' => ['admin'],
+  'users-new.php' => ['admin'],
 
   // User & system management
   'user-management.php' => ['admin'],
@@ -31,6 +32,10 @@ return [
   'doctors.php' => ['admin'],
   'doctor-schedule.php' => ['admin', 'doctor', 'receptionist', 'secretary'],
   'doctor-patient-search.php' => ['admin', 'doctor', 'receptionist', 'secretary'],
+
+  // Staff management
+  'receptionists.php' => ['admin'],
+  'secretaries.php' => ['admin'],
 
 
   'appointments.php' => ['admin', 'doctor', 'secretary', 'receptionist', 'patient'],

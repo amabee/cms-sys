@@ -25,9 +25,6 @@ require_once '../controllers/NotificationsController.php';
 $controller = new NotificationsController();
 
 try {
-    // DEBUG: Log all POST data
-    error_log("DEBUG: Received POST data: " . json_encode($_POST));
-    
     // Validate required fields
     $required_fields = ['name', 'code', 'type', 'method', 'message_template'];
     foreach ($required_fields as $field) {
@@ -49,15 +46,12 @@ try {
     // If id is provided, perform an update instead to avoid duplicate key on code
     if (!empty($_POST['id'])) {
         $id = intval($_POST['id']);
-        error_log("DEBUG: Checking template code '{$data['code']}' excluding id {$id}");
         // Ensure code uniqueness excluding this id
         if ($controller->templateCodeExists($data['code'], $id)) {
             $conflictId = $controller->getTemplateIdByCode($data['code'], $id);
-            error_log("DEBUG: Code conflict found! Conflict ID: {$conflictId}");
             echo json_encode(['success' => false, 'message' => 'Template code already exists', 'conflict_id' => $conflictId, 'received_id' => $id]);
             exit;
         }
-        error_log("DEBUG: No code conflict, proceeding with update");
         $result = $controller->updateTemplate($id, $data);
         if ($result['success']) $result['received_id'] = $id;
     } else {

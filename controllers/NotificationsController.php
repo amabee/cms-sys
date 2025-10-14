@@ -961,23 +961,14 @@ class NotificationsController {
     public function templateCodeExists($code, $excludeId = null) {
         try {
             if ($excludeId) {
-                $sql = "SELECT id FROM notification_templates WHERE template_code = :code AND id != :id LIMIT 1";
-                $params = ['code' => $code, 'id' => $excludeId];
-                error_log("DEBUG templateCodeExists: SQL = $sql, code = '$code', excludeId = $excludeId");
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute($params);
+                $stmt = $this->pdo->prepare("SELECT id FROM notification_templates WHERE template_code = :code AND id != :id LIMIT 1");
+                $stmt->execute(['code' => $code, 'id' => $excludeId]);
             } else {
-                $sql = "SELECT id FROM notification_templates WHERE template_code = :code LIMIT 1";
-                $params = ['code' => $code];
-                error_log("DEBUG templateCodeExists: SQL = $sql, code = '$code'");
-                $stmt = $this->pdo->prepare($sql);
-                $stmt->execute($params);
+                $stmt = $this->pdo->prepare("SELECT id FROM notification_templates WHERE template_code = :code LIMIT 1");
+                $stmt->execute(['code' => $code]);
             }
 
-            $result = $stmt->fetch();
-            $exists = (bool)$result;
-            error_log("DEBUG templateCodeExists: Result = " . ($result ? "ID {$result['id']}" : "none") . ", exists = " . ($exists ? 'true' : 'false'));
-            return $exists;
+            return (bool)$stmt->fetch();
         } catch (Exception $e) {
             $this->logger->log('ERROR', 'Failed to check template code existence: ' . $e->getMessage());
             return false;

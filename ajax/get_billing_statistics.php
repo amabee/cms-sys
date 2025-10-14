@@ -16,13 +16,20 @@ if (!in_array($user_type, ['admin', 'secretary', 'receptionist'])) {
 
 try {
     $controller = new BillingController();
-    $result = $controller->getStatistics();
+    $stats = $controller->getStatistics();
     
-    if ($result['success']) {
-        echo json_encode(['success' => true, 'data' => $result['data']]);
-    } else {
-        echo json_encode(['success' => false, 'message' => $result['message']]);
-    }
+    // Transform the stats into the expected format
+    $data = [
+        'total_revenue' => isset($stats['total_billed']) ? floatval($stats['total_billed']) : 0,
+        'paid_amount' => isset($stats['total_paid']) ? floatval($stats['total_paid']) : 0,
+        'pending_amount' => isset($stats['total_outstanding']) ? floatval($stats['total_outstanding']) : 0,
+        'total_bills' => isset($stats['total_bills']) ? intval($stats['total_bills']) : 0,
+        'paid_bills' => isset($stats['paid_bills']) ? intval($stats['paid_bills']) : 0,
+        'pending_bills' => isset($stats['pending_bills']) ? intval($stats['pending_bills']) : 0,
+        'overdue_bills' => isset($stats['overdue_bills']) ? intval($stats['overdue_bills']) : 0
+    ];
+    
+    echo json_encode(['success' => true, 'data' => $data]);
     
 } catch (Exception $e) {
     error_log('[ajax/get_billing_statistics] Exception: ' . $e->getMessage());
