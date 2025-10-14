@@ -29,6 +29,8 @@ return [
 
   'doctors.php' => ['admin'],
   'doctor-schedule.php' => ['admin', 'doctor', 'receptionist', 'secretary'],
+  'doctor-patient-search.php' => ['admin', 'doctor', 'receptionist', 'secretary'],
+
 
   'appointments.php' => ['admin', 'doctor', 'secretary', 'receptionist', 'patient'],
   'appointment-details.php' => ['admin', 'doctor', 'secretary', 'receptionist', 'patient'],

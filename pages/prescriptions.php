@@ -1,84 +1,81 @@
 <?php
-require_once 'controllers/PrescriptionController.php';
+$page_title = 'Prescription Management';
+$additional_css = [];
+$additional_js = [
+  "https://cdn.jsdelivr.net/npm/sweetalert2@11"
+];
 
-// Check user access
-if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'doctor', 'nurse', 'receptionist'])) {
-    header("Location: dashboard.php");
-    exit();
-}
+include __DIR__ . '/../shared/session_handler.php';
 
-// Initialize controller
-$controller = new PrescriptionController($conn);
-$user_role = $_SESSION['role'];
-$user_id = $_SESSION['user_id'];
+requireRole(['admin', 'doctor', 'nurse', 'receptionist']);
+$user_role = $_SESSION['user_type'] ?? null;
+$user_id = $_SESSION['user_id'] ?? null;
 
-// Get statistics for dashboard
-$stats = $controller->getPrescriptionStatistics($user_role === 'doctor' ? $user_id : null);
 ob_start();
 ?>
 
 <div class="content-wrapper">
-    <div class="content-header">
-        <div class="container-fluid">
-            <div class="row mb-2">
-                <div class="col-sm-6">
-                    <h1 class="m-0">Prescription Management</h1>
-                </div>
-                <div class="col-sm-6">
-                    <ol class="breadcrumb float-sm-right">
-                        <li class="breadcrumb-item"><a href="dashboard.php">Home</a></li>
-                        <li class="breadcrumb-item active">Prescriptions</li>
-                    </ol>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <section class="content">
         <div class="container-fluid">
             <!-- Statistics Overview -->
             <div class="row mb-4">
                 <div class="col-lg-3 col-6">
-                    <div class="small-box bg-info">
-                        <div class="inner">
-                            <h3><?= $stats['data']['total_prescriptions'] ?? 0 ?></h3>
-                            <p>Total Prescriptions</p>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-prescription-bottle-alt"></i>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-lg-3 col-6">
-                    <div class="small-box bg-success">
-                        <div class="inner">
-                            <h3><?= $stats['data']['active_prescriptions'] ?? 0 ?></h3>
-                            <p>Active Prescriptions</p>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-pills"></i>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar flex-shrink-0 me-3">
+                                    <i class="bx bx-file bx-lg text-info"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Total Prescriptions</small>
+                                    <h3 class="mb-0" id="totalPrescriptions">0</h3>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-6">
-                    <div class="small-box bg-warning">
-                        <div class="inner">
-                            <h3><?= $stats['data']['completed_prescriptions'] ?? 0 ?></h3>
-                            <p>Completed</p>
-                        </div>
-                        <div class="icon">
-                            <i class="fas fa-check-circle"></i>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar flex-shrink-0 me-3">
+                                    <i class="bx bx-check-circle bx-lg text-success"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Active</small>
+                                    <h3 class="mb-0" id="activePrescriptions">0</h3>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-3 col-6">
-                    <div class="small-box bg-danger">
-                        <div class="inner">
-                            <h3>$<?= number_format($stats['data']['avg_cost'] ?? 0, 2) ?></h3>
-                            <p>Average Cost</p>
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar flex-shrink-0 me-3">
+                                    <i class="bx bx-check-double bx-lg text-warning"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Completed</small>
+                                    <h3 class="mb-0" id="completedPrescriptions">0</h3>
+                                </div>
+                            </div>
                         </div>
-                        <div class="icon">
-                            <i class="fas fa-dollar-sign"></i>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar flex-shrink-0 me-3">
+                                    <i class="bx bx-time-five bx-lg text-danger"></i>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Pending</small>
+                                    <h3 class="mb-0" id="pendingPrescriptions">0</h3>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -444,7 +441,38 @@ ob_start();
     </div>
 </template>
 
-<!-- Include JavaScript -->
-<script src="assets/js/prescriptions.js"></script>
+<script>
+// Prescriptions page JavaScript
+$(document).ready(function() {
+  // Initialize DataTable for prescriptions
+  const table = $('#prescriptionsTable').DataTable({
+    processing: true,
+    serverSide: true,
+    ajax: {
+      url: '../ajax/get_prescriptions.php',
+      type: 'GET'
+    },
+    columns: [
+      { data: 'prescription_id' },
+      { data: 'patient_name' },
+      { data: 'doctor_name' },
+      { data: 'created_at' },
+      { data: 'status' },
+      { 
+        data: null,
+        orderable: false,
+        render: function(data) {
+          return `<button class="btn btn-sm btn-outline-primary view-prescription" data-id="${data.id}">
+            <i class="bx bx-show"></i> View
+          </button>`;
+        }
+      }
+    ]
+  });
+});
+</script>
 
-<?php require_once 'shared/footer.php'; ?>
+<?php
+$content = ob_get_clean();
+include __DIR__ . '/../shared/layout.php';
+?>

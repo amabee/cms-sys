@@ -112,19 +112,19 @@ ON DUPLICATE KEY UPDATE
     setting_value = VALUES(setting_value),
     description = VALUES(description);
 
--- Add security columns to users table if they don't exist
-ALTER TABLE users 
-ADD COLUMN IF NOT EXISTS password_changed_at TIMESTAMP NULL,
-ADD COLUMN IF NOT EXISTS failed_login_attempts INT DEFAULT 0,
-ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP NULL,
-ADD COLUMN IF NOT EXISTS force_password_change BOOLEAN DEFAULT FALSE,
-ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT FALSE,
-ADD COLUMN IF NOT EXISTS two_factor_secret VARCHAR(32) NULL,
-ADD COLUMN IF NOT EXISTS last_password_change TIMESTAMP NULL,
-ADD COLUMN IF NOT EXISTS security_question VARCHAR(255) NULL,
-ADD COLUMN IF NOT EXISTS security_answer VARCHAR(255) NULL;
+-- Add security columns to users table if they don't exist (commented out - MySQL doesn't support ADD COLUMN IF NOT EXISTS)
+-- ALTER TABLE users 
+-- ADD COLUMN password_changed_at TIMESTAMP NULL,
+-- ADD COLUMN failed_login_attempts INT DEFAULT 0,
+-- ADD COLUMN locked_until TIMESTAMP NULL,
+-- ADD COLUMN force_password_change BOOLEAN DEFAULT FALSE,
+-- ADD COLUMN two_factor_enabled BOOLEAN DEFAULT FALSE,
+-- ADD COLUMN two_factor_secret VARCHAR(32) NULL,
+-- ADD COLUMN last_password_change TIMESTAMP NULL,
+-- ADD COLUMN security_question VARCHAR(255) NULL,
+-- ADD COLUMN security_answer VARCHAR(255) NULL;
 
--- Create indexes for performance
-CREATE INDEX IF NOT EXISTS idx_users_locked_until ON users(locked_until);
-CREATE INDEX IF NOT EXISTS idx_users_failed_attempts ON users(failed_login_attempts);
-CREATE INDEX IF NOT EXISTS idx_users_last_login ON users(last_login);
+-- Create indexes for performance (commented out - CREATE INDEX IF NOT EXISTS not supported in MySQL)
+-- CREATE INDEX idx_users_locked_until ON users(locked_until);
+-- CREATE INDEX idx_users_failed_attempts ON users(failed_login_attempts);
+-- CREATE INDEX idx_users_last_login ON users(last_login);

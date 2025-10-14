@@ -260,7 +260,7 @@ CREATE TABLE IF NOT EXISTS sms_queue (
 );
 
 -- Insert default notification templates
-INSERT INTO notification_templates (template_code, template_name, notification_type, delivery_method, subject_template, message_template, available_variables, is_system_template) VALUES
+INSERT IGNORE INTO notification_templates (template_code, template_name, notification_type, delivery_method, subject_template, message_template, available_variables, is_system_template) VALUES
 -- Appointment reminders
 ('appointment_reminder_email', 'Appointment Reminder - Email', 'appointment_reminder', 'email', 
  'Appointment Reminder - {appointment_date} at {appointment_time}',
@@ -301,20 +301,22 @@ INSERT INTO notification_templates (template_code, template_name, notification_t
  '["maintenance_date", "maintenance_time", "maintenance_duration", "affected_services", "emergency_contact", "clinic_name"]', TRUE);
 
 -- Insert default notification preferences for existing users
-INSERT INTO notification_preferences (user_id, appointment_reminders, appointment_confirmations, lab_results, critical_lab_alerts, billing_notifications, system_alerts, email_enabled, sms_enabled, in_app_enabled, push_enabled)
+INSERT IGNORE INTO notification_preferences (user_id, appointment_reminders, appointment_confirmations, lab_results, critical_lab_alerts, billing_notifications, system_alerts, email_enabled, sms_enabled, in_app_enabled, push_enabled)
 SELECT id, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, TRUE
 FROM users
 WHERE id NOT IN (SELECT user_id FROM notification_preferences WHERE user_id IS NOT NULL);
 
--- Insert default notification preferences for existing patients
-INSERT INTO notification_preferences (patient_id, appointment_reminders, appointment_confirmations, lab_results, critical_lab_alerts, billing_notifications, system_alerts, email_enabled, sms_enabled, in_app_enabled, push_enabled)
-SELECT id, TRUE, TRUE, TRUE, TRUE, TRUE, FALSE, TRUE, FALSE, FALSE, FALSE
-FROM patients
-WHERE id NOT IN (SELECT patient_id FROM notification_preferences WHERE patient_id IS NOT NULL);
+-- Note: Patient-specific notification preferences should be created when patients are registered
+-- or through the patient portal, linking them to their user accounts if they have login access
 
 -- Create triggers for automatic notification generation
 
 DELIMITER //
+
+-- Drop existing triggers if they exist
+DROP TRIGGER IF EXISTS create_appointment_reminder//
+DROP TRIGGER IF EXISTS create_lab_result_notification//
+DROP TRIGGER IF EXISTS create_billing_notification//
 
 -- Trigger for appointment reminders
 CREATE TRIGGER create_appointment_reminder
@@ -365,6 +367,9 @@ BEGIN
 END//
 
 -- Trigger for lab result notifications
+-- NOTE: This trigger is disabled because lab_tests table no longer has a 'results' column
+-- Lab results are now stored in lab_results table. Create notifications from application code instead.
+/*
 CREATE TRIGGER create_lab_result_notification
     AFTER UPDATE ON lab_tests
     FOR EACH ROW
@@ -380,11 +385,11 @@ BEGIN
         SET notification_priority = 'normal';
         SET notification_type = 'lab_result_ready';
         
-        -- Check if result contains critical values (simplified check)
-        IF NEW.results LIKE '%CRITICAL%' OR NEW.results LIKE '%URGENT%' OR NEW.results LIKE '%ABNORMAL%' THEN
-            SET notification_priority = 'critical';
-            SET notification_type = 'lab_critical_value';
-        END IF;
+        -- Disabled: Check if result contains critical values (simplified check)
+        -- IF NEW.results LIKE '%CRITICAL%' OR NEW.results LIKE '%URGENT%' OR NEW.results LIKE '%ABNORMAL%' THEN
+        --     SET notification_priority = 'critical';
+        --     SET notification_type = 'lab_critical_value';
+        -- END IF;
         
         INSERT INTO notifications (
             notification_id,
@@ -416,13 +421,12 @@ BEGIN
                 'lab_test_id', NEW.id,
                 'test_name', NEW.test_name,
                 'test_category', NEW.test_category,
-                'test_date', NEW.test_date,
-                'results', NEW.results,
-                'normal_range', NEW.normal_range
+                'test_date', NEW.test_date
             )
         );
     END IF;
-END//
+END;
+*///
 
 -- Trigger for billing notifications
 CREATE TRIGGER create_billing_notification

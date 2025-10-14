@@ -68,7 +68,7 @@ class QueueController {
     /**
      * Add patient to queue (usually when they check in)
      */
-    public function addToQueue($patient_id, $appointment_id = null, $notes = '') {
+    public function addToQueue($patient_id, $appointment_id = null, $notes = '', $vital_signs = []) {
         if (!$this->db) return ['success' => false, 'message' => 'Database unavailable'];
         
         try {
@@ -84,6 +84,20 @@ class QueueController {
             
             if ($checkStmt->fetchColumn()) {
                 return ['success' => false, 'message' => 'Patient already in queue'];
+            }
+            
+            // Add vital signs to notes if provided
+            if (!empty($vital_signs)) {
+                $vitalSignsText = "\n\n--- Vital Signs ---";
+                if (!empty($vital_signs['blood_pressure'])) $vitalSignsText .= "\nBP: " . $vital_signs['blood_pressure'];
+                if (!empty($vital_signs['temperature'])) $vitalSignsText .= "\nTemp: " . $vital_signs['temperature'] . "°C";
+                if (!empty($vital_signs['pulse'])) $vitalSignsText .= "\nPulse: " . $vital_signs['pulse'] . " bpm";
+                if (!empty($vital_signs['respiratory_rate'])) $vitalSignsText .= "\nResp Rate: " . $vital_signs['respiratory_rate'];
+                if (!empty($vital_signs['weight'])) $vitalSignsText .= "\nWeight: " . $vital_signs['weight'] . " kg";
+                if (!empty($vital_signs['height'])) $vitalSignsText .= "\nHeight: " . $vital_signs['height'] . " cm";
+                if (!empty($vital_signs['oxygen_saturation'])) $vitalSignsText .= "\nO2 Sat: " . $vital_signs['oxygen_saturation'] . "%";
+                if (!empty($vital_signs['pain_level'])) $vitalSignsText .= "\nPain Level: " . $vital_signs['pain_level'] . "/10";
+                $notes .= $vitalSignsText;
             }
             
             $sql = "

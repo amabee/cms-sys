@@ -72,7 +72,7 @@ class PatientsController {
             if (count($orderParts) > 0) $orderSql = 'ORDER BY ' . implode(', ', $orderParts);
         }
 
-        // Updated SQL to include last visit date from appointments table
+        // Updated SQL to include last visit date and queue status
         $sql = "
             SELECT 
                 p.id, 
@@ -84,7 +84,11 @@ class PatientsController {
                 p.date_of_birth, 
                 p.gender, 
                 p.is_active,
-                MAX(a.appointment_date) as last_visit_date
+                MAX(a.appointment_date) as last_visit_date,
+                (SELECT COUNT(*) FROM visit_queue vq 
+                 WHERE vq.patient_id = p.id 
+                 AND vq.status IN ('queued', 'called') 
+                 AND DATE(vq.queued_at) = CURDATE()) as in_queue
             FROM patients p
             LEFT JOIN appointments a ON p.id = a.patient_id AND a.status IN ('completed', 'in_progress')
             $where

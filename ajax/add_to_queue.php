@@ -23,6 +23,18 @@ $patient_id = isset($_POST['patient_id']) ? (int)$_POST['patient_id'] : 0;
 $appointment_id = isset($_POST['appointment_id']) ? (int)$_POST['appointment_id'] : null;
 $notes = isset($_POST['notes']) ? trim($_POST['notes']) : '';
 
+// Vital signs data
+$vital_signs = [
+    'blood_pressure' => isset($_POST['blood_pressure']) ? trim($_POST['blood_pressure']) : null,
+    'temperature' => isset($_POST['temperature']) ? trim($_POST['temperature']) : null,
+    'pulse' => isset($_POST['pulse']) ? trim($_POST['pulse']) : null,
+    'respiratory_rate' => isset($_POST['respiratory_rate']) ? trim($_POST['respiratory_rate']) : null,
+    'weight' => isset($_POST['weight']) ? trim($_POST['weight']) : null,
+    'height' => isset($_POST['height']) ? trim($_POST['height']) : null,
+    'oxygen_saturation' => isset($_POST['oxygen_saturation']) ? trim($_POST['oxygen_saturation']) : null,
+    'pain_level' => isset($_POST['pain_level']) ? trim($_POST['pain_level']) : null
+];
+
 if ($patient_id <= 0) {
     echo json_encode(['success' => false, 'message' => 'Patient ID is required']);
     exit();
@@ -30,7 +42,7 @@ if ($patient_id <= 0) {
 
 try {
     $controller = new QueueController();
-    $result = $controller->addToQueue($patient_id, $appointment_id, $notes);
+    $result = $controller->addToQueue($patient_id, $appointment_id, $notes, $vital_signs);
     echo json_encode($result);
     
 } catch (Exception $e) {

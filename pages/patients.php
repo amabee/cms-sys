@@ -154,14 +154,17 @@ ob_start();
         { 
           data: null, 
           orderable: false, 
-          render: function (data) { 
+          render: function (data) {
+            const inQueue = data.in_queue > 0;
+            const queueBtn = inQueue 
+              ? `<button class="btn btn-sm btn-secondary" disabled title="Already in Queue"><i class="bx bx-check"></i></button>`
+              : `<button class="btn btn-sm btn-outline-success add-to-queue-btn" data-id="${data.id}" title="Add to Queue"><i class="bx bx-plus"></i></button>`;
+            
             return `<div class="btn-group">
               <button class="btn btn-sm btn-outline-primary view-patient" data-id="${data.id}" title="View Details">
                 <i class="bx bx-show"></i>
               </button>
-              <button class="btn btn-sm btn-outline-success add-to-queue-btn" data-id="${data.id}" title="Add to Queue">
-                <i class="bx bx-plus"></i>
-              </button>
+              ${queueBtn}
             </div>`; 
           } 
         }
@@ -171,37 +174,21 @@ ob_start();
     $('#patientsSearchBtn').on('click', function () { table.ajax.reload(); });
     $('#patientsSearch').on('keypress', function (e) { if (e.key === 'Enter') { table.ajax.reload(); } });
     
-    // Add to queue functionality for receptionist
+    // Add to queue functionality - open modal with vital signs
     $('#patientsTable').on('click', '.add-to-queue-btn', function () {
       const patientId = $(this).data('id');
+      $('#queuePatientId').val(patientId);
+      $('#vitalSignsForm')[0].reset();
       
-      $.post('../ajax/add_to_queue.php', {
-        patient_id: patientId
-      })
-      .done(function(response) {
-        if (response.success) {
-          Swal.fire({
-            icon: 'success',
-            title: 'Added to Queue',
-            text: 'Patient has been added to the queue successfully.',
-            timer: 2000,
-            showConfirmButton: false
-          });
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'Failed',
-            text: response.message || 'Failed to add patient to queue'
-          });
+      // Get patient name for display
+      $.get('../ajax/get_patient.php', { id: patientId }, function(res) {
+        if (res && res.success && res.data) {
+          $('#queuePatientName').text(`${res.data.first_name} ${res.data.last_name}`);
         }
-      })
-      .fail(function() {
-        Swal.fire({
-          icon: 'error',
-          title: 'Error',
-          text: 'Connection error. Please try again.'
-        });
       });
+      
+      var modal = new bootstrap.Modal(document.getElementById('addToQueueModal'));
+      modal.show();
     });
 
     // submit new patient
@@ -249,6 +236,113 @@ ob_start();
         </div>
       </div>
     `);
+
+    // Add to Queue Modal with Vital Signs
+    $('body').append(`
+      <div class="modal fade" id="addToQueueModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title">
+                <i class="bx bx-plus-circle me-2 text-primary"></i>Add Patient to Queue
+              </h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="alert alert-info mb-3">
+                <i class="bx bx-info-circle me-1"></i>
+                Adding patient: <strong id="queuePatientName"></strong>
+              </div>
+              
+              <form id="vitalSignsForm">
+                <input type="hidden" id="queuePatientId" name="patient_id">
+                
+                <h6 class="mb-3 text-primary">Vital Signs</h6>
+                
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Blood Pressure</label>
+                    <input type="text" class="form-control" name="blood_pressure" placeholder="120/80">
+                    <small class="text-muted">Systolic/Diastolic</small>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Temperature (°C)</label>
+                    <input type="number" step="0.1" class="form-control" name="temperature" placeholder="36.5">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Pulse (bpm)</label>
+                    <input type="number" class="form-control" name="pulse" placeholder="72">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Respiratory Rate</label>
+                    <input type="number" class="form-control" name="respiratory_rate" placeholder="16">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Weight (kg)</label>
+                    <input type="number" step="0.1" class="form-control" name="weight" placeholder="70.0">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Height (cm)</label>
+                    <input type="number" class="form-control" name="height" placeholder="170">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">O2 Saturation (%)</label>
+                    <input type="number" class="form-control" name="oxygen_saturation" placeholder="98">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Pain Level (0-10)</label>
+                    <input type="number" min="0" max="10" class="form-control" name="pain_level" placeholder="0">
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Chief Complaint / Notes</label>
+                    <textarea class="form-control" name="notes" rows="3" placeholder="Reason for visit..."></textarea>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary" id="submitAddToQueue">
+                <i class="bx bx-check me-1"></i>Add to Queue
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+
+    // Submit add to queue with vital signs
+    $(document).on('click', '#submitAddToQueue', function() {
+      const formData = $('#vitalSignsForm').serialize();
+      
+      $.post('../ajax/add_to_queue.php', formData)
+        .done(function(response) {
+          if (response.success) {
+            $('#addToQueueModal').modal('hide');
+            table.ajax.reload();
+            Swal.fire({
+              icon: 'success',
+              title: 'Added to Queue',
+              text: 'Patient has been added to the queue with vital signs.',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Failed',
+              text: response.message || 'Failed to add patient to queue'
+            });
+          }
+        })
+        .fail(function() {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Connection error. Please try again.'
+          });
+        });
+    });
 
     // open view modal and load data
     $('#patientsTable').on('click', '.view-patient', function () {

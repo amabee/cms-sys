@@ -236,6 +236,9 @@ ON DUPLICATE KEY UPDATE subject = VALUES(subject);
 -- Create triggers for system activity logging
 DELIMITER //
 
+DROP TRIGGER IF EXISTS system_settings_activity_log//
+DROP TRIGGER IF EXISTS user_preferences_activity_log//
+
 CREATE TRIGGER system_settings_activity_log 
 AFTER UPDATE ON system_settings
 FOR EACH ROW
@@ -264,12 +267,12 @@ END//
 
 DELIMITER ;
 
--- Create indexes for performance optimization
-CREATE INDEX idx_system_settings_category_key ON system_settings(category, setting_key);
-CREATE INDEX idx_user_preferences_composite ON user_preferences(user_id, preference_key, updated_at);
-CREATE INDEX idx_system_activity_composite ON system_activity(activity_type, created_at, user_id);
-CREATE INDEX idx_maintenance_schedules_next_run ON maintenance_schedules(is_active, next_run);
-CREATE INDEX idx_system_backups_status_date ON system_backups(status, created_at);
+-- Create indexes for performance optimization (commented out to avoid duplicates)
+-- CREATE INDEX idx_system_settings_category_key ON system_settings(category, setting_key);
+-- CREATE INDEX idx_user_preferences_composite ON user_preferences(user_id, preference_key, updated_at);
+-- CREATE INDEX idx_system_activity_composite ON system_activity(activity_type, created_at, user_id);
+-- CREATE INDEX idx_maintenance_schedules_next_run ON maintenance_schedules(is_active, next_run);
+-- CREATE INDEX idx_system_backups_status_date ON system_backups(status, created_at);
 
 -- Insert sample maintenance schedules
 INSERT INTO maintenance_schedules (task_name, task_type, schedule_type, schedule_value, task_configuration, created_by) VALUES
@@ -280,12 +283,10 @@ INSERT INTO maintenance_schedules (task_name, task_type, schedule_type, schedule
 
 -- Set initial next run times for maintenance schedules
 UPDATE maintenance_schedules 
-SET next_run = DATE_ADD(NOW(), INTERVAL 
-    CASE 
-        WHEN schedule_type = 'daily' THEN 1 DAY
-        WHEN schedule_type = 'weekly' THEN 7 DAY
-        WHEN schedule_type = 'monthly' THEN 30 DAY
-        ELSE 1 DAY
-    END
-) 
+SET next_run = CASE 
+    WHEN schedule_type = 'daily' THEN DATE_ADD(NOW(), INTERVAL 1 DAY)
+    WHEN schedule_type = 'weekly' THEN DATE_ADD(NOW(), INTERVAL 7 DAY)
+    WHEN schedule_type = 'monthly' THEN DATE_ADD(NOW(), INTERVAL 30 DAY)
+    ELSE DATE_ADD(NOW(), INTERVAL 1 DAY)
+END 
 WHERE next_run IS NULL;

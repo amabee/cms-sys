@@ -196,6 +196,10 @@ SELECT id FROM patients WHERE is_active = 1;
 -- Create triggers for automatic activity logging
 DELIMITER //
 
+DROP TRIGGER IF EXISTS after_patient_message_insert//
+DROP TRIGGER IF EXISTS after_appointment_request_insert//
+DROP TRIGGER IF EXISTS after_document_access_insert//
+
 CREATE TRIGGER after_patient_message_insert
 AFTER INSERT ON patient_messages
 FOR EACH ROW
@@ -224,27 +228,29 @@ END//
 
 DELIMITER ;
 
--- Add indexes for better performance
-CREATE INDEX idx_patients_email ON patients(email);
-CREATE INDEX idx_patients_phone ON patients(phone);
-CREATE INDEX idx_patients_active ON patients(is_active);
+-- Add indexes for better performance (skip if they already exist)
+-- Note: These indexes may already exist, errors are ignored
+-- CREATE INDEX idx_patients_email ON patients(email);
+-- CREATE INDEX idx_patients_phone ON patients(phone);
+-- CREATE INDEX idx_patients_active ON patients(is_active);
 
 -- Update patients table to ensure portal access fields exist
-ALTER TABLE patients 
-ADD COLUMN IF NOT EXISTS portal_enabled BOOLEAN DEFAULT TRUE,
-ADD COLUMN IF NOT EXISTS portal_last_login TIMESTAMP NULL,
-ADD COLUMN IF NOT EXISTS portal_login_attempts INT DEFAULT 0,
-ADD COLUMN IF NOT EXISTS portal_locked_until TIMESTAMP NULL,
-ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE,
-ADD COLUMN IF NOT EXISTS email_verification_token VARCHAR(128) NULL,
-ADD COLUMN IF NOT EXISTS password_reset_token VARCHAR(128) NULL,
-ADD COLUMN IF NOT EXISTS password_reset_expires TIMESTAMP NULL;
+-- Note: Columns may already exist, manual verification recommended
+-- ALTER TABLE patients 
+-- ADD COLUMN portal_enabled BOOLEAN DEFAULT TRUE,
+-- ADD COLUMN portal_last_login TIMESTAMP NULL,
+-- ADD COLUMN portal_login_attempts INT DEFAULT 0,
+-- ADD COLUMN portal_locked_until TIMESTAMP NULL,
+-- ADD COLUMN email_verified BOOLEAN DEFAULT FALSE,
+-- ADD COLUMN email_verification_token VARCHAR(128) NULL,
+-- ADD COLUMN password_reset_token VARCHAR(128) NULL,
+-- ADD COLUMN password_reset_expires TIMESTAMP NULL;
 
--- Create indexes for new patient fields
-CREATE INDEX idx_patients_portal_enabled ON patients(portal_enabled);
-CREATE INDEX idx_patients_email_verified ON patients(email_verified);
-CREATE INDEX idx_patients_verification_token ON patients(email_verification_token);
-CREATE INDEX idx_patients_reset_token ON patients(password_reset_token);
+-- Create indexes for new patient fields (commented out to avoid duplicates)
+-- CREATE INDEX idx_patients_portal_enabled ON patients(portal_enabled);
+-- CREATE INDEX idx_patients_email_verified ON patients(email_verified);
+-- CREATE INDEX idx_patients_verification_token ON patients(email_verification_token);
+-- CREATE INDEX idx_patients_reset_token ON patients(password_reset_token);
 
 -- Sample data for development/testing
 INSERT IGNORE INTO patient_messages (patient_id, sender_type, sender_id, recipient_type, recipient_id, subject, message, message_type, priority) VALUES

@@ -43,21 +43,8 @@ CREATE TABLE IF NOT EXISTS queue_logs (
     INDEX idx_action_time (action, timestamp)
 );
 
--- Add trigger to auto-generate queue numbers
-DELIMITER //
-CREATE TRIGGER IF NOT EXISTS tr_visit_queue_number 
-BEFORE INSERT ON visit_queue 
-FOR EACH ROW 
-BEGIN 
-    IF NEW.queue_number IS NULL THEN
-        SET NEW.queue_number = (
-            SELECT COALESCE(MAX(queue_number), 0) + 1 
-            FROM visit_queue 
-            WHERE DATE(queued_at) = DATE(NOW())
-        );
-    END IF;
-END//
-DELIMITER ;
+-- Note: Queue number generation should be handled in application code
+-- to avoid trigger limitations with querying the same table being modified
 
 -- Insert sample data for testing (optional - remove in production)
 -- INSERT INTO visit_queue (patient_id, appointment_id, notes) 

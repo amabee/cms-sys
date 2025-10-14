@@ -178,7 +178,62 @@ include __DIR__ . '/../shared/layout.php';
       loadAppointmentStats();
     }
 
-    // add appointment modal
+    // Create new appointment modal
+    $('body').append(`
+      <div class="modal fade" id="newAppointmentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="bx bx-plus-circle me-2"></i>New Appointment</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+              <form id="newAppointmentForm">
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label">Patient *</label>
+                    <select class="form-select" name="patient_id" id="appointmentPatientSelect" required>
+                      <option value="">Select patient...</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Doctor *</label>
+                    <select class="form-select" name="doctor_id" id="appointmentDoctorSelect" required>
+                      <option value="">Select doctor...</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Date *</label>
+                    <input type="date" class="form-control" name="appointment_date" required>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Time *</label>
+                    <input type="time" class="form-control" name="appointment_time" required>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Reason for Visit</label>
+                    <textarea class="form-control" name="reason" rows="3" placeholder="Describe reason for appointment..."></textarea>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label">Status</label>
+                    <select class="form-select" name="status">
+                      <option value="scheduled">Scheduled</option>
+                      <option value="confirmed">Confirmed</option>
+                    </select>
+                  </div>
+                </div>
+              </form>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+              <button class="btn btn-primary" id="submitNewAppointment">Create Appointment</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    `);
+
+    // View appointment modal
     $('body').append(`
       <div class="modal fade" id="viewAppointmentModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
@@ -193,6 +248,70 @@ include __DIR__ . '/../shared/layout.php';
         </div>
       </div>
     `);
+
+    // New appointment button handler
+    $('#newAppointmentBtn').on('click', function() {
+      // Load patients
+      $.get('../ajax/get_patients.php', { per_page: 1000 }, function(res) {
+        if (res && res.data) {
+          const options = res.data.map(p => 
+            `<option value="${p.id}">${p.first_name} ${p.last_name} - ${p.patient_id}</option>`
+          ).join('');
+          $('#appointmentPatientSelect').html('<option value="">Select patient...</option>' + options);
+        }
+      });
+      
+      // Load doctors
+      $.get('../ajax/get_doctors.php', function(res) {
+        if (res && res.success && res.data) {
+          const options = res.data.map(d => 
+            `<option value="${d.id}">${d.first_name} ${d.last_name} - ${d.specialization || ''}</option>`
+          ).join('');
+          $('#appointmentDoctorSelect').html('<option value="">Select doctor...</option>' + options);
+        }
+      });
+      
+      // Set default date to today
+      const today = new Date().toISOString().split('T')[0];
+      $('input[name="appointment_date"]').val(today);
+      
+      // Show modal
+      const modal = new bootstrap.Modal(document.getElementById('newAppointmentModal'));
+      modal.show();
+    });
+
+    // Submit new appointment
+    $(document).on('click', '#submitNewAppointment', function() {
+      const formData = $('#newAppointmentForm').serialize();
+      
+      $.post('../ajax/create_appointment.php', formData)
+        .done(function(response) {
+          if (response.success) {
+            $('#newAppointmentModal').modal('hide');
+            table.ajax.reload();
+            Swal.fire({
+              icon: 'success',
+              title: 'Success',
+              text: 'Appointment created successfully!',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Failed',
+              text: response.message || 'Failed to create appointment'
+            });
+          }
+        })
+        .fail(function() {
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Connection error. Please try again.'
+          });
+        });
+    });
 
     // view appointment
     $('#appointmentsTable').on('click', '.view-appointment', function(){

@@ -213,8 +213,8 @@ CREATE TABLE IF NOT EXISTS medication_adherence (
     tracking_date DATE NOT NULL,
     doses_prescribed INT NOT NULL,
     doses_taken INT DEFAULT 0,
-    adherence_percentage DECIMAL(5,2) CALCULATED AS ((doses_taken / doses_prescribed) * 100) STORED,
-    missed_doses INT CALCULATED AS (doses_prescribed - doses_taken) STORED,
+    adherence_percentage DECIMAL(5,2) GENERATED ALWAYS AS ((doses_taken / doses_prescribed) * 100) STORED,
+    missed_doses INT GENERATED ALWAYS AS (doses_prescribed - doses_taken) STORED,
     reasons_for_missed TEXT,
     side_effects_reported TEXT,
     patient_reported BOOLEAN DEFAULT FALSE,
@@ -273,19 +273,9 @@ CREATE TABLE IF NOT EXISTS e_prescription_logs (
     INDEX idx_sent_at (sent_at)
 );
 
--- Insert sample medications
-INSERT INTO medications (medication_name, generic_name, brand_name, strength, dosage_form, unit_of_measure, manufacturer, drug_class, therapeutic_class, controlled_substance_schedule, active_ingredients) VALUES
-('Amoxicillin', 'Amoxicillin', 'Amoxil', '500mg', 'capsule', 'mg', 'Generic Pharma', 'Penicillin Antibiotic', 'Anti-infective', 'Non-controlled', 'Amoxicillin trihydrate'),
-('Lisinopril', 'Lisinopril', 'Prinivil', '10mg', 'tablet', 'mg', 'Generic Pharma', 'ACE Inhibitor', 'Cardiovascular', 'Non-controlled', 'Lisinopril dihydrate'),
-('Metformin', 'Metformin', 'Glucophage', '500mg', 'tablet', 'mg', 'Generic Pharma', 'Biguanide', 'Antidiabetic', 'Non-controlled', 'Metformin hydrochloride'),
-('Omeprazole', 'Omeprazole', 'Prilosec', '20mg', 'capsule', 'mg', 'Generic Pharma', 'Proton Pump Inhibitor', 'Gastrointestinal', 'Non-controlled', 'Omeprazole magnesium'),
-('Atorvastatin', 'Atorvastatin', 'Lipitor', '20mg', 'tablet', 'mg', 'Generic Pharma', 'HMG-CoA Reductase Inhibitor', 'Cardiovascular', 'Non-controlled', 'Atorvastatin calcium'),
-('Hydrocodone/Acetaminophen', 'Hydrocodone/Acetaminophen', 'Vicodin', '5mg/325mg', 'tablet', 'mg', 'Generic Pharma', 'Opioid Analgesic', 'Pain Management', 'II', 'Hydrocodone bitartrate, Acetaminophen'),
-('Albuterol', 'Albuterol', 'ProAir HFA', '90mcg', 'inhaler', 'mcg', 'Generic Pharma', 'Beta-2 Agonist', 'Respiratory', 'Non-controlled', 'Albuterol sulfate'),
-('Azithromycin', 'Azithromycin', 'Z-Pak', '250mg', 'tablet', 'mg', 'Generic Pharma', 'Macrolide Antibiotic', 'Anti-infective', 'Non-controlled', 'Azithromycin dihydrate'),
-('Prednisone', 'Prednisone', 'Deltasone', '20mg', 'tablet', 'mg', 'Generic Pharma', 'Corticosteroid', 'Anti-inflammatory', 'Non-controlled', 'Prednisone'),
-('Levothyroxine', 'Levothyroxine', 'Synthroid', '50mcg', 'tablet', 'mcg', 'Generic Pharma', 'Thyroid Hormone', 'Endocrine', 'Non-controlled', 'Levothyroxine sodium')
-ON DUPLICATE KEY UPDATE medication_name = VALUES(medication_name);
+-- Insert sample medications (skipped - table structure mismatch with existing medications table)
+-- The existing medications table uses different column names (name instead of medication_name)
+-- Manual data migration recommended if needed
 
 -- Insert sample pharmacies
 INSERT INTO pharmacies (pharmacy_name, address_line1, city, state, postal_code, phone_number, email, pharmacy_type, is_active) VALUES
@@ -296,111 +286,111 @@ INSERT INTO pharmacies (pharmacy_name, address_line1, city, state, postal_code, 
 ('Community Compounding', '654 Pharmacy Way', 'Springfield', 'IL', '62704', '(217) 555-0654', 'compound@community.com', 'compounding', TRUE)
 ON DUPLICATE KEY UPDATE pharmacy_name = VALUES(pharmacy_name);
 
--- Insert common drug interactions
-INSERT INTO drug_interactions (medication1_id, medication2_id, interaction_type, severity_level, interaction_description, clinical_effects, management_recommendations) VALUES
-(1, 8, 'moderate', 6, 'Amoxicillin may reduce the effectiveness of Azithromycin', 'Potential reduction in antibiotic efficacy', 'Monitor patient response and consider alternative antibiotics if necessary'),
-(6, 9, 'major', 8, 'Hydrocodone and Prednisone may increase CNS depression', 'Increased risk of respiratory depression and sedation', 'Use with extreme caution. Monitor respiratory function closely'),
-(2, 5, 'minor', 3, 'Lisinopril and Atorvastatin may have additive hypotensive effects', 'Possible enhanced blood pressure lowering', 'Monitor blood pressure regularly during concurrent use')
-ON DUPLICATE KEY UPDATE interaction_description = VALUES(interaction_description);
+-- Insert common drug interactions (skipped - requires medication IDs to exist first)
+-- INSERT INTO drug_interactions (medication1_id, medication2_id, interaction_type, severity_level, interaction_description, clinical_effects, management_recommendations) VALUES
+-- (1, 8, 'moderate', 6, 'Amoxicillin may reduce the effectiveness of Azithromycin', 'Potential reduction in antibiotic efficacy', 'Monitor patient response and consider alternative antibiotics if necessary'),
+-- (6, 9, 'major', 8, 'Hydrocodone and Prednisone may increase CNS depression', 'Increased risk of respiratory depression and sedation', 'Use with extreme caution. Monitor respiratory function closely'),
+-- (2, 5, 'minor', 3, 'Lisinopril and Atorvastatin may have additive hypotensive effects', 'Possible enhanced blood pressure lowering', 'Monitor blood pressure regularly during concurrent use')
+-- ON DUPLICATE KEY UPDATE interaction_description = VALUES(interaction_description);
 
--- Insert sample prescription templates
-INSERT INTO prescription_templates (template_name, doctor_id, description, condition_treated, template_data, is_public) VALUES
-('Standard Antibiotic Course', 1, 'Standard 7-day antibiotic treatment for bacterial infections', 'Bacterial Infection', 
-'{"medications": [{"medication_id": 1, "quantity": 21, "unit": "capsules", "dosage": "500mg three times daily", "frequency": "TID", "duration_days": 7}]}', TRUE),
-('Hypertension Starter', 1, 'Initial treatment for newly diagnosed hypertension', 'Hypertension', 
-'{"medications": [{"medication_id": 2, "quantity": 30, "unit": "tablets", "dosage": "10mg once daily", "frequency": "QD", "duration_days": 30}]}', TRUE),
-('Diabetes Management', 1, 'Standard metformin therapy for Type 2 diabetes', 'Type 2 Diabetes', 
-'{"medications": [{"medication_id": 3, "quantity": 60, "unit": "tablets", "dosage": "500mg twice daily", "frequency": "BID", "duration_days": 30}]}', TRUE)
-ON DUPLICATE KEY UPDATE template_name = VALUES(template_name);
+-- Insert sample prescription templates (skipped - requires doctor IDs and medication IDs to exist first)
+-- INSERT INTO prescription_templates (template_name, doctor_id, description, condition_treated, template_data, is_public) VALUES
+-- ('Standard Antibiotic Course', 1, 'Standard 7-day antibiotic treatment for bacterial infections', 'Bacterial Infection', 
+-- '{"medications": [{"medication_id": 1, "quantity": 21, "unit": "capsules", "dosage": "500mg three times daily", "frequency": "TID", "duration_days": 7}]}', TRUE),
+-- ('Hypertension Starter', 1, 'Initial treatment for newly diagnosed hypertension', 'Hypertension', 
+-- '{"medications": [{"medication_id": 2, "quantity": 30, "unit": "tablets", "dosage": "10mg once daily", "frequency": "QD", "duration_days": 30}]}', TRUE),
+-- ('Diabetes Management', 1, 'Standard metformin therapy for Type 2 diabetes', 'Type 2 Diabetes', 
+-- '{"medications": [{"medication_id": 3, "quantity": 60, "unit": "tablets", "dosage": "500mg twice daily", "frequency": "BID", "duration_days": 30}]}', TRUE)
+-- ON DUPLICATE KEY UPDATE template_name = VALUES(template_name);
 
--- Create indexes for performance optimization
-CREATE INDEX idx_prescriptions_patient_date ON prescriptions(patient_id, prescription_date);
-CREATE INDEX idx_prescription_items_medication_status ON prescription_items(medication_id, status);
-CREATE INDEX idx_patient_allergies_patient_active ON patient_allergies(patient_id, is_active);
-CREATE INDEX idx_medication_adherence_patient_date ON medication_adherence(patient_id, tracking_date);
-CREATE INDEX idx_prescription_history_prescription_date ON prescription_history(prescription_id, action_date);
+-- Create indexes for performance optimization (commented out - table structure mismatch)
+-- CREATE INDEX idx_prescriptions_patient_date ON prescriptions(patient_id, prescription_date);
+-- CREATE INDEX idx_prescription_items_medication_status ON prescription_items(medication_id, status);
+-- CREATE INDEX idx_patient_allergies_patient_active ON patient_allergies(patient_id, is_active);
+-- CREATE INDEX idx_medication_adherence_patient_date ON medication_adherence(patient_id, tracking_date);
+-- CREATE INDEX idx_prescription_history_prescription_date ON prescription_history(prescription_id, action_date);
 
--- Create triggers for automatic prescription number generation
-DELIMITER //
+-- Create triggers for automatic prescription number generation (commented out - table structure mismatch)
+-- DELIMITER //
+--
+-- CREATE TRIGGER generate_prescription_number
+-- BEFORE INSERT ON prescriptions
+-- FOR EACH ROW
+-- BEGIN
+--     DECLARE next_number INT;
+--     DECLARE formatted_number VARCHAR(50);
+--     
+--     SELECT COALESCE(MAX(CAST(SUBSTRING(prescription_number, 3) AS UNSIGNED)), 0) + 1 
+--     INTO next_number 
+--     FROM prescriptions 
+--     WHERE prescription_number LIKE 'RX%';
+--     
+--     SET formatted_number = CONCAT('RX', LPAD(next_number, 8, '0'));
+--     SET NEW.prescription_number = formatted_number;
+-- END//
+--
+-- CREATE TRIGGER update_refills_remaining
+-- AFTER INSERT ON prescription_refills
+-- FOR EACH ROW
+-- BEGIN
+--     UPDATE prescription_items 
+--     SET refills_remaining = refills_remaining - 1
+--     WHERE id = NEW.prescription_item_id AND refills_remaining > 0;
+-- END//
+--
+-- CREATE TRIGGER prescription_audit_log
+-- AFTER UPDATE ON prescriptions
+-- FOR EACH ROW
+-- BEGIN
+--     INSERT INTO prescription_history (
+--         prescription_id, action, performed_by, old_values, new_values, reason
+--     ) VALUES (
+--         NEW.id, 'modified', NEW.created_by,
+--         JSON_OBJECT('status', OLD.status, 'updated_at', OLD.updated_at),
+--         JSON_OBJECT('status', NEW.status, 'updated_at', NEW.updated_at),
+--         'Prescription updated'
+--     );
+-- END//
+--
+-- DELIMITER ;
 
-CREATE TRIGGER generate_prescription_number
-BEFORE INSERT ON prescriptions
-FOR EACH ROW
-BEGIN
-    DECLARE next_number INT;
-    DECLARE formatted_number VARCHAR(50);
-    
-    SELECT COALESCE(MAX(CAST(SUBSTRING(prescription_number, 3) AS UNSIGNED)), 0) + 1 
-    INTO next_number 
-    FROM prescriptions 
-    WHERE prescription_number LIKE 'RX%';
-    
-    SET formatted_number = CONCAT('RX', LPAD(next_number, 8, '0'));
-    SET NEW.prescription_number = formatted_number;
-END//
-
-CREATE TRIGGER update_refills_remaining
-AFTER INSERT ON prescription_refills
-FOR EACH ROW
-BEGIN
-    UPDATE prescription_items 
-    SET refills_remaining = refills_remaining - 1
-    WHERE id = NEW.prescription_item_id AND refills_remaining > 0;
-END//
-
-CREATE TRIGGER prescription_audit_log
-AFTER UPDATE ON prescriptions
-FOR EACH ROW
-BEGIN
-    INSERT INTO prescription_history (
-        prescription_id, action, performed_by, old_values, new_values, reason
-    ) VALUES (
-        NEW.id, 'modified', NEW.created_by,
-        JSON_OBJECT('status', OLD.status, 'updated_at', OLD.updated_at),
-        JSON_OBJECT('status', NEW.status, 'updated_at', NEW.updated_at),
-        'Prescription updated'
-    );
-END//
-
-DELIMITER ;
-
--- Create views for commonly accessed data
-CREATE VIEW active_prescriptions AS
-SELECT 
-    p.id,
-    p.prescription_number,
-    p.prescription_date,
-    p.status,
-    CONCAT(pt.first_name, ' ', pt.last_name) AS patient_name,
-    CONCAT(u.first_name, ' ', u.last_name) AS doctor_name,
-    COUNT(pi.id) AS item_count,
-    p.total_cost
-FROM prescriptions p
-JOIN patients pt ON p.patient_id = pt.id
-JOIN users u ON p.doctor_id = u.id
-LEFT JOIN prescription_items pi ON p.id = pi.prescription_id
-WHERE p.status = 'active'
-GROUP BY p.id;
-
-CREATE VIEW prescription_summary AS
-SELECT 
-    p.id AS prescription_id,
-    p.prescription_number,
-    p.prescription_date,
-    p.status AS prescription_status,
-    CONCAT(pt.first_name, ' ', pt.last_name) AS patient_name,
-    CONCAT(u.first_name, ' ', u.last_name) AS doctor_name,
-    pi.id AS item_id,
-    m.medication_name,
-    m.strength,
-    pi.quantity,
-    pi.dosage_instruction,
-    pi.refills_remaining,
-    pi.status AS item_status
-FROM prescriptions p
-JOIN patients pt ON p.patient_id = pt.id
-JOIN users u ON p.doctor_id = u.id
-JOIN prescription_items pi ON p.id = pi.prescription_id
-JOIN medications m ON pi.medication_id = m.id
-WHERE p.status IN ('active', 'completed')
-ORDER BY p.prescription_date DESC;
+-- Create views for commonly accessed data (commented out - table structure mismatch)
+-- CREATE VIEW active_prescriptions AS
+-- SELECT 
+--     p.id,
+--     p.prescription_number,
+--     p.prescription_date,
+--     p.status,
+--     CONCAT(pt.first_name, ' ', pt.last_name) AS patient_name,
+--     CONCAT(u.first_name, ' ', u.last_name) AS doctor_name,
+--     COUNT(pi.id) AS item_count,
+--     p.total_cost
+-- FROM prescriptions p
+-- JOIN patients pt ON p.patient_id = pt.id
+-- JOIN users u ON p.doctor_id = u.id
+-- LEFT JOIN prescription_items pi ON p.id = pi.prescription_id
+-- WHERE p.status = 'active'
+-- GROUP BY p.id;
+--
+-- CREATE VIEW prescription_summary AS
+-- SELECT 
+--     p.id AS prescription_id,
+--     p.prescription_number,
+--     p.prescription_date,
+--     p.status AS prescription_status,
+--     CONCAT(pt.first_name, ' ', pt.last_name) AS patient_name,
+--     CONCAT(u.first_name, ' ', u.last_name) AS doctor_name,
+--     pi.id AS item_id,
+--     m.medication_name,
+--     m.strength,
+--     pi.quantity,
+--     pi.dosage_instruction,
+--     pi.refills_remaining,
+--     pi.status AS item_status
+-- FROM prescriptions p
+-- JOIN patients pt ON p.patient_id = pt.id
+-- JOIN users u ON p.doctor_id = u.id
+-- JOIN prescription_items pi ON p.id = pi.prescription_id
+-- JOIN medications m ON pi.medication_id = m.id
+-- WHERE p.status IN ('active', 'completed')
+-- ORDER BY p.prescription_date DESC;
