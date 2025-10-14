@@ -9,41 +9,63 @@ if (!isset($user_id)) {
     exit();
 }
 
+// Only allow doctors to view their own statistics
+if ($user_type !== 'doctor') {
+    echo json_encode(['success' => false, 'message' => 'Access denied']);
+    exit();
+}
+
 try {
     $db = getDBConnection();
     
-    // Total doctors
-    $totalQuery = "SELECT COUNT(*) as total FROM doctors";
-    $totalStmt = $db->query($totalQuery);
-    $total = $totalStmt->fetch(PDO::FETCH_ASSOC)['total'];
+    // Get doctor ID from user_id
+    $stmt = $db->prepare('SELECT id FROM doctors WHERE user_id = :user_id LIMIT 1');
+    $stmt->bindValue(':user_id', $user_id, PDO::PARAM_INT);
+    $stmt->execute();
+    $doctor_id = $stmt->fetchColumn();
     
-    // Available doctors
-    $availableQuery = "SELECT COUNT(*) as available FROM doctors WHERE is_available = 1";
-    $availableStmt = $db->query($availableQuery);
-    $available = $availableStmt->fetch(PDO::FETCH_ASSOC)['available'];
+    if (!$doctor_id) {
+        echo json_encode(['success' => false, 'message' => 'Doctor profile not found']);
+        exit();
+    }
     
-    // Today's appointments
+    // Today's appointments count
     $todayQuery = "SELECT COUNT(*) as today_appointments 
                    FROM appointments 
-                   WHERE appointment_date = CURDATE() 
-                   AND status IN ('scheduled', 'in_progress')";
-    $todayStmt = $db->query($todayQuery);
+                   WHERE doctor_id = :doctor_id 
+                   AND DATE(appointment_date) = CURDATE() 
+                   AND status IN ('scheduled', 'confirmed', 'in_progress')";
+    $todayStmt = $db->prepare($todayQuery);
+    $todayStmt->bindValue(':doctor_id', $doctor_id, PDO::PARAM_INT);
+    $todayStmt->execute();
     $todayAppointments = $todayStmt->fetch(PDO::FETCH_ASSOC)['today_appointments'];
     
-    // Number of specializations
-    $specializationsQuery = "SELECT COUNT(DISTINCT specialization) as specializations 
-                            FROM doctors 
-                            WHERE specialization IS NOT NULL AND specialization != ''";
-    $specializationsStmt = $db->query($specializationsQuery);
-    $specializations = $specializationsStmt->fetch(PDO::FETCH_ASSOC)['specializations'];
+    // Total unique patients
+    $patientsQuery = "SELECT COUNT(DISTINCT patient_id) as total_patients 
+                      FROM appointments 
+                      WHERE doctor_id = :doctor_id";
+    $patientsStmt = $db->prepare($patientsQuery);
+    $patientsStmt->bindValue(':doctor_id', $doctor_id, PDO::PARAM_INT);
+    $patientsStmt->execute();
+    $totalPatients = $patientsStmt->fetch(PDO::FETCH_ASSOC)['total_patients'];
+    
+    // Pending actions (upcoming appointments not yet completed)
+    $pendingQuery = "SELECT COUNT(*) as pending_actions 
+                     FROM appointments 
+                     WHERE doctor_id = :doctor_id 
+                     AND appointment_date >= CURDATE() 
+                     AND status IN ('scheduled', 'confirmed')";
+    $pendingStmt = $db->prepare($pendingQuery);
+    $pendingStmt->bindValue(':doctor_id', $doctor_id, PDO::PARAM_INT);
+    $pendingStmt->execute();
+    $pendingActions = $pendingStmt->fetch(PDO::FETCH_ASSOC)['pending_actions'];
     
     echo json_encode([
         'success' => true,
         'data' => [
-            'total' => $total,
-            'available' => $available,
-            'today_appointments' => $todayAppointments,
-            'specializations' => $specializations
+            'today_appointments' => (int)$todayAppointments,
+            'total_patients' => (int)$totalPatients,
+            'pending_actions' => (int)$pendingActions
         ]
     ]);
     

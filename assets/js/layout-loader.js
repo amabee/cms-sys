@@ -11,31 +11,16 @@ window.layoutLoaded = false;
 // Initialize on document ready
 $(document).ready(function() {
     loadLayoutComponents().then(function() {
-        // Layout is ready, now initialize menu
-        initializeMenu();
+        // Layout is ready - set flag for main.js to initialize menu
+        console.log('Layout loaded successfully');
+        window.layoutLoaded = true;
+        
+        // Trigger a custom event that main.js can listen to
+        window.dispatchEvent(new Event('layoutReady'));
+    }).catch(function(error) {
+        console.error('Layout loading failed:', error);
     });
 });
-
-/**
- * Initialize menu after layout is loaded
- */
-function initializeMenu() {
-    // Only initialize if menu.js has loaded
-    if (typeof Menu !== 'undefined') {
-        // Initialize menu for all menu elements
-        if (document.querySelectorAll('.menu').length > 0) {
-            document.querySelectorAll('.menu').forEach(function(menuElement) {
-                if (!menuElement.classList.contains('menu-initialized')) {
-                    new Menu(menuElement, {
-                        orientation: 'vertical',
-                        closeChildren: false
-                    });
-                    menuElement.classList.add('menu-initialized');
-                }
-            });
-        }
-    }
-}
 
 /**
  * Load sidebar and navbar based on user role

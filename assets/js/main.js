@@ -13,27 +13,58 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 (function () {
-  // Initialize menu
-  //-----------------
-
-  let layoutMenuEl = document.querySelectorAll("#layout-menu");
-  layoutMenuEl.forEach(function (element) {
-    menu = new Menu(element, {
-      orientation: "vertical",
-      closeChildren: false,
+  // Wait for both layout AND Helpers to be ready before initializing menu
+  const initializeMenu = function() {
+    let layoutMenuEl = document.querySelectorAll("#layout-menu");
+    if (layoutMenuEl.length === 0) {
+      console.warn('No layout-menu found, waiting for layout...');
+      return;
+    }
+    
+    // Check if Helpers is available
+    if (typeof window.Helpers === 'undefined') {
+      console.error('Helpers not loaded! Make sure helpers.js is loaded before main.js');
+      return;
+    }
+    
+    layoutMenuEl.forEach(function (element) {
+      // Prevent double initialization
+      if (element.classList.contains('menu-initialized')) {
+        return;
+      }
+      
+      menu = new Menu(element, {
+        orientation: "vertical",
+        closeChildren: false,
+      });
+      element.classList.add('menu-initialized');
+      
+      // Change parameter to true if you want scroll animation
+      window.Helpers.scrollToActive((animate = false));
+      window.Helpers.mainMenu = menu;
     });
-    // Change parameter to true if you want scroll animation
-    window.Helpers.scrollToActive((animate = false));
-    window.Helpers.mainMenu = menu;
+
+    // Initialize menu togglers and bind click on each
+    let menuToggler = document.querySelectorAll(".layout-menu-toggle");
+    menuToggler.forEach((item) => {
+      item.addEventListener("click", (event) => {
+        event.preventDefault();
+        window.Helpers.toggleCollapsed();
+      });
+    });
+  };
+  
+  // Listen for layout ready event
+  window.addEventListener('layoutReady', function() {
+    console.log('Layout ready, initializing menu...');
+    initializeMenu();
   });
-
-  // Initialize menu togglers and bind click on each
-  let menuToggler = document.querySelectorAll(".layout-menu-toggle");
-  menuToggler.forEach((item) => {
-    item.addEventListener("click", (event) => {
-      event.preventDefault();
-      window.Helpers.toggleCollapsed();
-    });
+  
+  // Fallback: also try on DOMContentLoaded (in case layout already loaded)
+  document.addEventListener('DOMContentLoaded', function() {
+    if (window.layoutLoaded) {
+      initializeMenu();
+    }
   });
 
   // Display menu toggle (layout-menu-toggle) on hover with delay

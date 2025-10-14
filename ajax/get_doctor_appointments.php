@@ -75,10 +75,7 @@ try {
         exit();
     }
     
-    // Get date filter (default to today)
-    $date = isset($_GET['date']) ? $_GET['date'] : date('Y-m-d');
-    
-    // Get appointments for the doctor on the specified date
+    // Build query based on filters
     $sql = "
         SELECT 
             a.id,
@@ -92,22 +89,72 @@ try {
             p.id as patient_id
         FROM appointments a
         JOIN patients p ON a.patient_id = p.id
-        WHERE a.doctor_id = :doctor_id 
-        AND DATE(a.appointment_date) = :date
-        ORDER BY a.appointment_time ASC
+        WHERE a.doctor_id = :doctor_id
     ";
     
-    $stmt = $db->prepare($sql);
-    $stmt->bindValue(':doctor_id', $doctor_id, PDO::PARAM_INT);
-    $stmt->bindValue(':date', $date, PDO::PARAM_STR);
-    $stmt->execute();
+    $params = [':doctor_id' => $doctor_id];
+    
+    // Filter by status/type
+    $filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
+    $today = date('Y-m-d');
+    
+    switch ($filter) {
+        case 'today':
+            $sql .= " AND DATE(a.appointment_date) = :today";
+            $params[':today'] = $today;
+            break;
+        case 'upcoming':
+            $sql .= " AND a.appointment_date >= :today AND a.status IN ('scheduled', 'confirmed')";
+            $params[':today'] = $today;
+            break;
+        case 'completed':
+            $sql .= " AND a.status = 'completed'";
+            break;
+        case 'cancelled':
+            $sql .= " AND a.status IN ('cancelled', 'no_show')";
+            break;
+        // 'all' - no additional filter
+    }
+    
+    // Date range filter
+    if (isset($_GET['start_date']) && !empty($_GET['start_date'])) {
+        $sql .= " AND a.appointment_date >= :start_date";
+        $params[':start_date'] = $_GET['start_date'];
+    }
+    
+    if (isset($_GET['end_date']) && !empty($_GET['end_date'])) {
+        $sql .= " AND a.appointment_date <= :end_date";
+        $params[':end_date'] = $_GET['end_date'];
+    }
+    
+    // Get upcoming appointments with limit (for dashboard)
+    if (isset($_GET['upcoming']) && $_GET['upcoming'] && isset($_GET['limit'])) {
+        $sql .= " AND a.appointment_date >= :today AND a.status IN ('scheduled', 'confirmed')";
+        $params[':today'] = $today;
+        $sql .= " ORDER BY a.appointment_date ASC, a.appointment_time ASC LIMIT :limit";
+        
+        $stmt = $db->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->bindValue(':limit', (int)$_GET['limit'], PDO::PARAM_INT);
+        $stmt->execute();
+    } else {
+        $sql .= " ORDER BY a.appointment_date DESC, a.appointment_time DESC";
+        
+        $stmt = $db->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value, is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR);
+        }
+        $stmt->execute();
+    }
     
     $appointments = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     echo json_encode([
         'success' => true,
         'data' => $appointments,
-        'date' => $date
+        'filter' => $filter
     ]);
     
 } catch (Exception $e) {

@@ -2,8 +2,37 @@
 let currentPatientId = null;
 
 $(document).ready(function() {
-    // Check authentication
-    checkAuth();
+    // Wait for layout to load before initializing
+    waitForLayout().then(function() {
+        initializePatientsPage();
+    });
+});
+
+/**
+ * Wait for layout to be loaded
+ */
+function waitForLayout() {
+    return new Promise(function(resolve) {
+        if (window.layoutLoaded && window.currentUser) {
+            resolve();
+        } else {
+            // Poll every 100ms until layout is loaded
+            var checkInterval = setInterval(function() {
+                if (window.layoutLoaded && window.currentUser) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
+        }
+    });
+}
+
+/**
+ * Initialize patients page
+ */
+function initializePatientsPage() {
+    // Load all patients on page load
+    loadAllPatients();
     
     // Enter key to search
     $('#searchInput').on('keypress', function(e) {
@@ -11,25 +40,74 @@ $(document).ready(function() {
             searchPatients();
         }
     });
-});
-
-/**
- * Check authentication
- */
-function checkAuth() {
-    $.ajax({
-        url: '../ajax/check_session.php',
-        type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            if (!response.success || response.user_type !== 'doctor') {
-                window.location.href = '../login-new.html';
-            }
-        },
-        error: function() {
-            window.location.href = '../login-new.html';
+    
+    // Auto-search on input (after 2 chars)
+    $('#searchInput').on('input', function() {
+        const query = $(this).val().trim();
+        if (query.length >= 2) {
+            // Debounce search
+            clearTimeout(window.searchTimeout);
+            window.searchTimeout = setTimeout(searchPatients, 500);
+        } else if (query.length === 0) {
+            // If search cleared, reload all patients
+            loadAllPatients();
         }
     });
+}
+
+/**
+ * Load all patients (for initial page load)
+ */
+function loadAllPatients() {
+    // Show loading
+    $('#patientsContainer').html(`
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="text-muted mt-2">Loading patients...</p>
+        </div>
+    `);
+    
+    $.ajax({
+        url: '../ajax/get_patients.php',
+        type: 'GET',
+        data: { 
+            start: 0,
+            length: 50 // Show first 50 patients
+        },
+        dataType: 'json',
+        success: function(response) {
+            // Handle DataTables format response
+            if (response.data && Array.isArray(response.data)) {
+                if (response.data.length > 0) {
+                    displayPatients(response.data);
+                } else {
+                    showNoPatients();
+                }
+            } else {
+                showNoPatients();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error loading patients:', error);
+            console.error('Response:', xhr.responseText);
+            showErrorMessage();
+        }
+    });
+}
+
+/**
+ * Show no patients message
+ */
+function showNoPatients() {
+    $('#patientsContainer').html(`
+        <div class="text-center py-5 text-muted">
+            <i class="bx bx-user-x" style="font-size: 48px;"></i>
+            <p class="mt-3">No patients found in the system</p>
+        </div>
+    `);
+    $('#patientCount').text('0');
 }
 
 /**
@@ -59,7 +137,10 @@ function searchPatients() {
         data: { search: searchTerm },
         dataType: 'json',
         success: function(response) {
-            if (response.success && response.data) {
+            // Handle DataTables format response
+            if (response.data && Array.isArray(response.data)) {
+                displayPatients(response.data);
+            } else if (response.success && response.data) {
                 displayPatients(response.data);
             } else {
                 showNoResults();
@@ -67,6 +148,7 @@ function searchPatients() {
         },
         error: function(xhr, status, error) {
             console.error('Error searching patients:', error);
+            console.error('Response:', xhr.responseText);
             showErrorMessage();
         }
     });

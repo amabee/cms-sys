@@ -170,11 +170,15 @@
     <script src="../assets/vendor/js/bootstrap.js"></script>
     <script src="../assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
     
-    <!-- Menu.js - Will be initialized by layout-loader -->
-    <script src="../assets/vendor/js/menu.js"></script>
+    <!-- Helpers MUST load before main.js -->
+    <script src="../assets/vendor/js/helpers.js"></script>
     
-    <!-- Layout Loader (loads sidebar/navbar and initializes menu) -->
+    <!-- Layout Loader (loads sidebar/navbar FIRST) -->
     <script src="../assets/js/layout-loader.js"></script>
+    
+    <!-- Menu.js and Main.js (will initialize after layout is loaded) -->
+    <script src="../assets/vendor/js/menu.js"></script>
+    <script src="../assets/js/main.js"></script>
     
     <!-- Page JS -->
     <script src="../assets/js/doctor-dashboard.js"></script>

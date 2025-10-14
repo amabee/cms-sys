@@ -3,9 +3,35 @@ let currentFilter = 'all';
 let currentAppointmentId = null;
 
 $(document).ready(function() {
-    // Check authentication
-    checkAuth();
-    
+    // Wait for layout to load before initializing
+    waitForLayout().then(function() {
+        initializeAppointments();
+    });
+});
+
+/**
+ * Wait for layout to be loaded
+ */
+function waitForLayout() {
+    return new Promise(function(resolve) {
+        if (window.layoutLoaded && window.currentUser) {
+            resolve();
+        } else {
+            // Poll every 100ms until layout is loaded
+            var checkInterval = setInterval(function() {
+                if (window.layoutLoaded && window.currentUser) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
+        }
+    });
+}
+
+/**
+ * Initialize appointments page after layout is ready
+ */
+function initializeAppointments() {
     // Load appointments
     loadAppointments();
     
@@ -14,24 +40,15 @@ $(document).ready(function() {
     const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
     $('#endDate').val(formatDateForInput(today));
     $('#startDate').val(formatDateForInput(lastMonth));
-});
-
-/**
- * Check authentication
- */
-function checkAuth() {
-    $.ajax({
-        url: '../ajax/check_session.php',
-        type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            if (!response.success || response.user_type !== 'doctor') {
-                window.location.href = '../login-new.html';
-            }
-        },
-        error: function() {
-            window.location.href = '../login-new.html';
-        }
+    
+    // Event listeners for date inputs
+    $('#startDate, #endDate').on('change', function() {
+        loadAppointments();
+    });
+    
+    // Search button (if exists)
+    $('#searchBtn').on('click', function() {
+        loadAppointments();
     });
 }
 
@@ -66,6 +83,19 @@ function loadAppointments() {
             showErrorMessage();
         }
     });
+}
+
+/**
+ * Filter appointments by type (called from HTML buttons)
+ */
+function filterAppointments(filter) {
+    currentFilter = filter;
+    
+    // Update active tab
+    $('.nav-link[data-filter]').removeClass('active');
+    $(`.nav-link[data-filter="${filter}"]`).addClass('active');
+    
+    loadAppointments();
 }
 
 /**
