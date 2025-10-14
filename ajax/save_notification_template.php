@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Check if user has permission to save templates
-if (!in_array($_SESSION['role'], ['admin'])) {
+if (!in_array($_SESSION['user_type'], ['admin'])) {
     echo json_encode(['success' => false, 'message' => 'Insufficient permissions']);
     exit;
 }

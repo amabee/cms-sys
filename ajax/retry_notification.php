@@ -10,7 +10,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Check if user has permission to retry notifications
-if (!in_array($_SESSION['role'], ['admin', 'doctor'])) {
+if (!in_array($_SESSION['user_type'], ['admin', 'doctor'])) {
     echo json_encode(['success' => false, 'message' => 'Insufficient permissions']);
     exit;
 }

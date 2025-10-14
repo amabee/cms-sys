@@ -797,7 +797,7 @@ class NotificationsController {
         try {
             $stmt = $this->pdo->prepare("
                 INSERT INTO notification_templates 
-                (name, template_code, notification_type, delivery_method, subject_template, message_template)
+                (template_name, template_code, notification_type, delivery_method, subject_template, message_template)
                 VALUES (:name, :code, :type, :method, :subject, :message)
             ");
             

@@ -10,9 +10,12 @@ $(document).ready(function() {
     loadPatientsList();
     loadUsersList();
     
-    // Tab switching event handlers
-    $('#notificationTabs button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
-        currentTab = $(e.target).attr('data-bs-target').substring(1);
+    // Tab switching event handlers - use more generic selector
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        const target = $(e.target).attr('data-bs-target');
+        currentTab = target ? target.substring(1) : '';
+        
+        console.log('Tab switched to:', currentTab); // Debug log
         
         switch(currentTab) {
             case 'recent-notifications':
@@ -25,6 +28,7 @@ $(document).ready(function() {
                 loadFailedNotifications();
                 break;
             case 'templates':
+                console.log('Loading templates...'); // Debug log
                 loadTemplates();
                 break;
         }
@@ -511,7 +515,9 @@ function loadTemplates() {
 
 // Display templates
 function displayTemplates(templates) {
+    console.log('displayTemplates called with:', templates); // Debug log
     const tbody = $('#templates-table tbody');
+    console.log('tbody element:', tbody.length); // Debug log
     tbody.empty();
     
     if (!templates || templates.length === 0) {
@@ -519,12 +525,13 @@ function displayTemplates(templates) {
         return;
     }
     
+    console.log('Processing', templates.length, 'templates'); // Debug log
     templates.forEach(template => {
         const row = `
             <tr>
-                <td>${escapeHtml(template.name)}</td>
-                <td>${getTypeBadge(template.type)}</td>
-                <td><span class="badge bg-secondary">${template.method.toUpperCase()}</span></td>
+                <td>${escapeHtml(template.template_name)}</td>
+                <td>${getTypeBadge(template.notification_type)}</td>
+                <td><span class="badge bg-secondary">${template.delivery_method.toUpperCase()}</span></td>
                 <td>${template.is_active ? '<span class="badge bg-success">Active</span>' : '<span class="badge bg-secondary">Inactive</span>'}</td>
                 <td>
                     <div class="btn-group btn-group-sm">

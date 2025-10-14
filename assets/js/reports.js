@@ -144,27 +144,35 @@ function setDefaultDateRanges() {
  * Setup tab change handlers
  */
 function setupTabHandlers() {
-    const tabs = document.querySelectorAll('#reportTabs .nav-link');
+    const tabs = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    console.log('Found tabs:', tabs.length); // Debug log
+    
     tabs.forEach(tab => {
-        tab.addEventListener('click', function() {
+        tab.addEventListener('shown.bs.tab', function(e) {
             const targetId = this.getAttribute('data-bs-target');
+            console.log('Tab switched to:', targetId); // Debug log
             
-            // Update current report type
+            // Update current report type and load data
             switch (targetId) {
                 case '#patient-demographics':
                     currentReportType = 'patient_demographics';
+                    loadPatientDemographics();
                     break;
                 case '#appointment-analytics':
                     currentReportType = 'appointment_analytics';
+                    loadAppointmentAnalytics();
                     break;
                 case '#financial-report':
                     currentReportType = 'financial';
+                    loadFinancialReport();
                     break;
                 case '#lab-tests-report':
                     currentReportType = 'lab_tests';
+                    loadLabTestsReport();
                     break;
                 case '#medical-records-report':
                     currentReportType = 'medical_records';
+                    loadMedicalRecordsReport();
                     break;
             }
         });
