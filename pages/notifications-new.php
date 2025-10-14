@@ -145,7 +145,7 @@ ob_start();
     
     <div class="card-body">
         <!-- Filter Section -->
-        <div class="card mb-4 bg-light">
+        <div class="card mb-4 ">
             <div class="card-body">
                 <h6 class="card-title mb-3">
                     <i class="bx bx-filter me-2"></i>Filter Notifications

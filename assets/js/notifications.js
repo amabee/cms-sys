@@ -706,21 +706,48 @@ function formatDateTime(dateTimeString) {
 }
 
 function showAlert(message, type) {
-    const alertHtml = `
-        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    // Create toast container if it doesn't exist
+    if ($('#toast-container').length === 0) {
+        $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+    }
+    
+    // Map alert types to toast styles
+    const toastTypes = {
+        'success': { icon: 'bx-check-circle', bgClass: 'bg-success' },
+        'danger': { icon: 'bx-error-circle', bgClass: 'bg-danger' },
+        'warning': { icon: 'bx-error', bgClass: 'bg-warning' },
+        'info': { icon: 'bx-info-circle', bgClass: 'bg-info' }
+    };
+    
+    const toastStyle = toastTypes[type] || toastTypes['info'];
+    const toastId = 'toast-' + Date.now();
+    
+    const toastHtml = `
+        <div id="${toastId}" class="toast align-items-center text-white ${toastStyle.bgClass} border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body d-flex align-items-center">
+                    <i class="bx ${toastStyle.icon} me-2 fs-5"></i>
+                    <span>${message}</span>
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
         </div>
     `;
     
-    // Remove existing alerts
-    $('.alert').remove();
+    // Add toast to container
+    $('#toast-container').append(toastHtml);
     
-    // Add new alert at the top of the page
-    $('body').prepend(alertHtml);
+    // Initialize and show toast
+    const toastElement = document.getElementById(toastId);
+    const toast = new bootstrap.Toast(toastElement, {
+        autohide: true,
+        delay: 5000
+    });
     
-    // Auto-dismiss after 5 seconds
-    setTimeout(function() {
-        $('.alert').alert('close');
-    }, 5000);
+    toast.show();
+    
+    // Remove toast element after it's hidden
+    toastElement.addEventListener('hidden.bs.toast', function() {
+        $(this).remove();
+    });
 }
