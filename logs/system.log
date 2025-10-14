@@ -9,3 +9,5 @@
 [2025-10-14 17:33:47] action=User created: vusoqi (ID: 6) user_id=INFO message=Array
 [2025-10-14 17:35:41] action=User created: gohycojeri (ID: 7) user_id=INFO message={"user_id":"7","role":"receptionist"}
 [2025-10-14 17:48:31] action=User created: sypixifody (ID: 8) user_id=INFO message={"user_id":"8","role":"secretary"}
+[2025-10-14 19:10:27] action=login user_id=NULL message=Failed to update last_login
+[2025-10-14 19:10:27] action=LOGIN user_id=1 message=auth_event

@@ -940,98 +940,14 @@ ob_start();
   }
 
   function printBill(billingId) {
-    // Load bill details and open print window
-    $.ajax({
-      url: '../ajax/get_billing_details.php',
-      method: 'GET',
-      data: { id: billingId },
-      success: function(response) {
-        if (response.success) {
-          const bill = response.data;
-                const printHtml = `
-                  <html>
-                  <head>
-                    <title>Print Bill ${bill.bill_id}</title>
-                    <style>
-                      body { font-family: Arial, Helvetica, sans-serif; color: #333; padding: 20px; }
-                      .invoice { max-width: 800px; margin: 0 auto; }
-                      .text-end { text-align: right; }
-                      table { width: 100%; border-collapse: collapse; }
-                      td { padding: 6px 4px; }
-                      .border-top { border-top: 1px solid #ddd; }
-                    </style>
-                  </head>
-                  <body>
-                    <div class="invoice">
-                      <div style="display:flex;justify-content:space-between;align-items:center;">
-                        <div>
-                          <h3>Polymedic Clinic</h3>
-                          <div>Billing Management</div>
-                        </div>
-                        <div>
-                          <strong>Bill #: </strong>${bill.bill_id}<br>
-                          <small>${bill.bill_date}</small>
-                        </div>
-                      </div>
-
-                      <hr>
-
-                      <div style="display:flex;justify-content:space-between;">
-                        <div>
-                          <strong>Patient</strong><br>
-                          ${bill.patient_name}<br>
-                          <small class="text-muted">${bill.patient_phone || ''} ${bill.patient_email ? ' | ' + bill.patient_email : ''}</small>
-                        </div>
-                        <div style="text-align:right;">
-                          <strong>Doctor</strong><br>
-                          ${bill.doctor_name || ''}<br>
-                          <small class="text-muted">Appointment: ${bill.appointment_date || 'N/A'}</small>
-                        </div>
-                      </div>
-
-                      <table style="margin-top:20px;">
-                        <tbody>
-                          <tr>
-                            <td>Consultation</td>
-                            <td class="text-end">₱${parseFloat(bill.consultation_fee || 0).toFixed(2)}</td>
-                          </tr>
-                          <tr>
-                            <td>Lab Charges</td>
-                            <td class="text-end">₱${parseFloat(bill.lab_charges || 0).toFixed(2)}</td>
-                          </tr>
-                          <tr>
-                            <td>Medication</td>
-                            <td class="text-end">₱${parseFloat(bill.medication_charges || 0).toFixed(2)}</td>
-                          </tr>
-                          <tr>
-                            <td class="border-top"><strong>Total</strong></td>
-                            <td class="text-end border-top"><strong>₱${parseFloat(bill.total_amount || 0).toFixed(2)}</strong></td>
-                          </tr>
-                        </tbody>
-                      </table>
-
-                      <div style="margin-top:30px;">
-                        <strong>Notes</strong>
-                        <div style="color:#666">${bill.notes || '-'}</div>
-                      </div>
-                    </div>
-                  </body>
-                  </html>
-                `;
-
-          const w = window.open('', '_blank');
-          w.document.write(printHtml);
-          w.document.close();
-          w.focus();
-          w.print();
-        } else {
-          showAlert('error', response.message || 'Failed to load bill for printing');
-        }
-      },
-      error: function() {
-        showAlert('error', 'Failed to load bill for printing');
-      }
-    });
+    // Open the server-side printable invoice for this bill in a new window
+    const url = `../reports/print_bill.php?id=${encodeURIComponent(billingId)}`;
+    const w = window.open(url, '_blank');
+    if (w) {
+      w.focus();
+    } else {
+      showAlert('error', 'Unable to open print window (popup blocked?)');
+    }
   }
 
   function deleteBill(billingId) {
