@@ -318,8 +318,16 @@ ob_start();
       $.post('../ajax/add_to_queue.php', formData)
         .done(function(response) {
           if (response.success) {
-            $('#addToQueueModal').modal('hide');
-            table.ajax.reload();
+            // Hide modal first
+            const modalElement = document.getElementById('addToQueueModal');
+            const modal = bootstrap.Modal.getInstance(modalElement);
+            if (modal) {
+              modal.hide();
+            }
+            
+            // Force table reload without cache
+            table.ajax.reload(null, false);
+            
             Swal.fire({
               icon: 'success',
               title: 'Added to Queue',
@@ -335,7 +343,8 @@ ob_start();
             });
           }
         })
-        .fail(function() {
+        .fail(function(xhr, status, error) {
+          console.error('Add to queue error:', error);
           Swal.fire({
             icon: 'error',
             title: 'Error',

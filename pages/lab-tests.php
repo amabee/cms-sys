@@ -2,8 +2,7 @@
 $page_title = 'Lab Tests Management';
 $additional_css = [];
 $additional_js = [
-  "https://cdn.jsdelivr.net/npm/sweetalert2@11",
-  "../assets/js/lab-tests.js"
+  "https://cdn.jsdelivr.net/npm/sweetalert2@11"
 ];
 
 include __DIR__ . '/../shared/session_handler.php';
@@ -215,13 +214,29 @@ ob_start();
                   <label for="patientSelect">Patient *</label>
                 </div>
               </div>
-              <?php if ($user_role === 'admin' || $user_role === 'nurse'): ?>
+              <?php if ($user_type === 'admin' || $user_type === 'secretary' || $user_type === 'receptionist'): ?>
               <div class="col-md-6">
                 <div class="form-floating">
                   <select class="form-select" id="doctorSelect" name="doctor_id" required>
                     <option value="">Choose doctor...</option>
                   </select>
                   <label for="doctorSelect">Ordering Doctor *</label>
+                </div>
+              </div>
+              <?php elseif ($user_type === 'doctor'): 
+                // Get doctor's ID from doctors table
+                $db = getDBConnection();
+                $stmt = $db->prepare("SELECT id FROM doctors WHERE user_id = ? LIMIT 1");
+                $stmt->execute([$user_id]);
+                $doctor_row = $stmt->fetch(PDO::FETCH_ASSOC);
+                $doctor_id = $doctor_row ? $doctor_row['id'] : null;
+              ?>
+              <!-- Hidden field for doctor's own ID -->
+              <input type="hidden" id="doctorSelect" name="doctor_id" value="<?= $doctor_id ?>">
+              <div class="col-md-6">
+                <div class="form-floating">
+                  <input type="text" class="form-control" value="Dr. <?= htmlspecialchars($_SESSION['first_name'] ?? '') ?> <?= htmlspecialchars($_SESSION['last_name'] ?? '') ?> (Ordering Doctor)" readonly>
+                  <label>Ordering Doctor</label>
                 </div>
               </div>
               <?php endif; ?>
@@ -236,18 +251,14 @@ ob_start();
             <div class="row g-3">
               <div class="col-md-6">
                 <div class="form-floating">
-                  <select class="form-select" id="testCategorySelect" name="category_id" required>
-                    <option value="">Choose category...</option>
-                  </select>
-                  <label for="testCategorySelect">Test Category *</label>
+                  <input type="text" class="form-control" id="testCategoryInput" name="test_category" placeholder="e.g., Hematology, Chemistry" required>
+                  <label for="testCategoryInput">Test Category *</label>
                 </div>
               </div>
               <div class="col-md-6">
                 <div class="form-floating">
-                  <select class="form-select" id="testNameSelect" name="test_name" required>
-                    <option value="">Choose test...</option>
-                  </select>
-                  <label for="testNameSelect">Test Name *</label>
+                  <input type="text" class="form-control" id="testNameInput" name="test_name" placeholder="e.g., Complete Blood Count (CBC)" required>
+                  <label for="testNameInput">Test Name *</label>
                 </div>
               </div>
               <div class="col-md-4">
@@ -305,7 +316,7 @@ ob_start();
               </div>
               <div class="col-12">
                 <div class="form-floating">
-                  <textarea class="form-control" id="clinicalNotes" name="clinical_notes" style="height: 100px" placeholder="Enter clinical notes..."></textarea>
+                  <textarea class="form-control" id="clinicalNotes" name="notes" style="height: 100px" placeholder="Enter clinical notes..."></textarea>
                   <label for="clinicalNotes">Clinical Notes & Special Instructions</label>
                 </div>
               </div>
@@ -360,9 +371,15 @@ ob_start();
   // Load statistics via AJAX to populate Sneat cards
   (function loadLabStats() {
     fetch('../ajax/get_lab_tests_statistics.php')
-      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(r => {
+        if (!r.ok) throw new Error('HTTP error ' + r.status);
+        return r.json();
+      })
       .then(res => {
-        if (!res || !res.success || !res.data) return;
+        if (!res || !res.success || !res.data) {
+          console.warn('Invalid statistics response:', res);
+          return;
+        }
         const s = res.data;
         const total = s.total_tests || 0;
         const ordered = (s.by_status && (s.by_status.ordered || 0)) || 0;
@@ -375,27 +392,154 @@ ob_start();
         document.getElementById('completedTests').textContent = completed;
         document.getElementById('recentActivity').textContent = recent;
       })
-      .catch(() => {
-        // Fail silently to avoid UI break
+      .catch((error) => {
+        console.error('Failed to load lab test statistics:', error);
+        // Set to 0 on error
+        document.getElementById('totalTests').textContent = '0';
+        document.getElementById('pendingResults').textContent = '0';
+        document.getElementById('completedTests').textContent = '0';
+        document.getElementById('recentActivity').textContent = '0';
       });
   })();
+
+  // Load dropdown options
+  function loadDropdownOptions() {
+    // Load patients (DataTables format)
+    $.ajax({
+      url: '../ajax/get_patients.php',
+      method: 'GET',
+      data: { length: 1000 },
+      success: function(response) {
+        if (response.data && Array.isArray(response.data)) {
+          let options = '<option value="">Choose patient...</option>';
+          response.data.forEach(function(patient) {
+            options += `<option value="${patient.id}">${patient.first_name} ${patient.last_name} (${patient.patient_id})</option>`;
+          });
+          $('#patientSelect').html(options);
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error('Failed to load patients:', error);
+      }
+    });
+    
+    // Load doctors
+    $.ajax({
+      url: '../ajax/get_doctors.php',
+      method: 'GET',
+      success: function(response) {
+        if (response.success && response.data) {
+          let options = '<option value="">Choose doctor...</option>';
+          response.data.forEach(function(doctor) {
+            options += `<option value="${doctor.id}">${doctor.name} - ${doctor.specialization || 'No specialization'}</option>`;
+          });
+          $('#doctorSelect').html(options);
+        }
+      },
+      error: function(xhr, status, error) {
+        console.error('Failed to load doctors:', error);
+      }
+    });
+  }
+
+  // Initialize DataTable
+  let labTestsTable;
+  
+  function initializeDataTable() {
+    labTestsTable = $('#labTestsTable').DataTable({
+      processing: true,
+      serverSide: true,
+      ajax: {
+        url: '../ajax/get_lab_tests.php',
+        type: 'GET',
+        error: function(xhr, error, code) {
+          console.error('DataTable AJAX error:', error, code);
+        }
+      },
+      columns: [
+        { data: 'test_id' },
+        { 
+          data: null,
+          render: function(data) {
+            return `${data.patient_first_name || ''} ${data.patient_last_name || ''}`;
+          }
+        },
+        { data: 'test_name' },
+        { data: 'test_category' },
+        { 
+          data: 'test_date',
+          render: function(data) {
+            return data ? new Date(data).toLocaleDateString() : '-';
+          }
+        },
+        { 
+          data: 'status',
+          render: function(data) {
+            const badges = {
+              'ordered': 'badge bg-warning',
+              'in_progress': 'badge bg-info',
+              'completed': 'badge bg-success',
+              'cancelled': 'badge bg-danger'
+            };
+            return `<span class="${badges[data] || 'badge bg-secondary'}">${data || 'N/A'}</span>`;
+          }
+        },
+        {
+          data: null,
+          orderable: false,
+          render: function(data) {
+            return `
+              <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-primary view-lab-test" data-id="${data.id}" title="View">
+                  <i class="bx bx-show"></i>
+                </button>
+                <button class="btn btn-outline-info edit-lab-test" data-id="${data.id}" title="Edit">
+                  <i class="bx bx-edit"></i>
+                </button>
+                <button class="btn btn-outline-danger delete-lab-test" data-id="${data.id}" title="Delete">
+                  <i class="bx bx-trash"></i>
+                </button>
+              </div>
+            `;
+          }
+        }
+      ],
+      order: [[4, 'desc']], // Sort by test_date descending
+      pageLength: 25,
+      language: {
+        emptyTable: "No lab tests found",
+        zeroRecords: "No matching lab tests found"
+      }
+    });
+  }
 
   // Minimal, non-invasive handlers for search and page buttons
   (function initLabTestsUI($) {
     if (!$) return;
 
+    // Initialize DataTable
+    initializeDataTable();
+    
+    // Load dropdowns on page load
+    loadDropdownOptions();
+
     // Quick Search actions
     $('#searchBtn').on('click', function () {
       const q = $('#searchFilter').val() || '';
-      // Emit generic events other scripts can hook into
-      $(document).trigger('labtests:search', [q]);
-      // Also trigger change on the input for existing listeners
-      $('#searchFilter').trigger('change');
+      labTestsTable.search(q).draw();
     });
+    
     $('#clearSearchBtn').on('click', function () {
       $('#searchFilter').val('');
-      $(document).trigger('labtests:search', ['']);
-      $('#searchFilter').trigger('change');
+      labTestsTable.search('').draw();
+    });
+    
+    // Search on Enter key
+    $('#searchFilter').on('keypress', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        labTestsTable.search($(this).val()).draw();
+      }
     });
 
     // Buttons in header
@@ -412,6 +556,66 @@ ob_start();
 
     $('#searchLabTestsBtn').on('click', function () {
       $('#labTestFilters').slideToggle(150);
+    });
+
+    // Save lab test
+    $('#saveLabTestBtn').on('click', function() {
+      const form = document.getElementById('labTestForm');
+      
+      // Validate form
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+
+      const formData = new FormData(form);
+      
+      // Show loading state
+      const btn = $(this);
+      const originalHtml = btn.html();
+      btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
+
+      $.ajax({
+        url: '../ajax/create_lab_test.php',
+        method: 'POST',
+        data: formData,
+        processData: false,
+        contentType: false,
+        success: function(response) {
+          btn.prop('disabled', false).html(originalHtml);
+          
+          if (response.success) {
+            $('#labTestModal').modal('hide');
+            
+            // Reload DataTable
+            labTestsTable.ajax.reload(null, false);
+            
+            // Show success message
+            Swal.fire({
+              icon: 'success',
+              title: 'Lab Test Created',
+              text: 'Lab test has been successfully created.',
+              timer: 2000,
+              showConfirmButton: false
+            });
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Failed',
+              text: response.message || 'Failed to create lab test'
+            });
+          }
+        },
+        error: function(xhr, status, error) {
+          btn.prop('disabled', false).html(originalHtml);
+          console.error('Save lab test error:', error);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Connection error. Please try again.'
+          });
+        }
+      });
     });
   })(window.jQuery);
 </script>

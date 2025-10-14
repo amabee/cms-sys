@@ -62,7 +62,7 @@ function setupEventListeners() {
 }
 
 function loadQueue() {
-    $.get('ajax/get_queue.php')
+    $.get('./../ajax/get_queue.php')
         .done(function(response) {
             if (response.success) {
                 displayQueue(response.data);

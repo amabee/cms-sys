@@ -265,7 +265,7 @@ include __DIR__ . '/../shared/layout.php';
       $.get('../ajax/get_doctors.php', function(res) {
         if (res && res.success && res.data) {
           const options = res.data.map(d => 
-            `<option value="${d.id}">${d.first_name} ${d.last_name} - ${d.specialization || ''}</option>`
+            `<option value="${d.id}">${d.name} - ${d.specialization || 'No specialization'}</option>`
           ).join('');
           $('#appointmentDoctorSelect').html('<option value="">Select doctor...</option>' + options);
         }

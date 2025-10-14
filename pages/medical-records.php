@@ -267,6 +267,12 @@ ob_start();
                                     <input type="number" id="vital_spo2" class="form-control" placeholder="98">
                                 </div>
                                 <div class="col-md-3 mb-3">
+                                    <label class="form-label">Pain Level (0-10)</label>
+                                    <input type="number" id="vital_pain_level" class="form-control" min="0" max="10" placeholder="0">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-12 mb-3">
                                     <label class="form-label">BMI</label>
                                     <input type="text" id="vital_bmi" class="form-control" readonly placeholder="Auto calculated">
                                 </div>
@@ -605,19 +611,63 @@ function loadStatistics() {
     <?php endif; ?>
 }
 
+function loadPatientVitalSigns(patientId) {
+    // Clear all vital signs first
+    $('#vital_bp, #vital_temp, #vital_hr, #vital_rr, #vital_weight, #vital_height, #vital_spo2, #vital_pain_level, #vital_bmi').val('');
+    
+    $.ajax({
+        url: '../ajax/get_patient_vital_signs.php',
+        method: 'GET',
+        data: { patient_id: patientId },
+        success: function(response) {
+            if (response.success && response.vital_signs) {
+                const vs = response.vital_signs;
+                
+                // Populate vital signs fields
+                if (vs.blood_pressure) $('#vital_bp').val(vs.blood_pressure);
+                if (vs.temperature) $('#vital_temp').val(vs.temperature);
+                if (vs.pulse) $('#vital_hr').val(vs.pulse);
+                if (vs.respiratory_rate) $('#vital_rr').val(vs.respiratory_rate);
+                if (vs.weight) $('#vital_weight').val(vs.weight);
+                if (vs.height) $('#vital_height').val(vs.height);
+                if (vs.oxygen_saturation) $('#vital_spo2').val(vs.oxygen_saturation);
+                if (vs.pain_level) $('#vital_pain_level').val(vs.pain_level);
+                
+                // Calculate BMI
+                calculateBMI();
+                
+                // Show success message
+                const queuedTime = new Date(response.queued_at).toLocaleTimeString();
+                toastr.success(`Vital signs loaded from today's queue entry (${queuedTime})`, 'Vital Signs Loaded');
+            } else {
+                // No vital signs found - show info message
+                toastr.info('No vital signs found for today. Please enter manually.', 'No Vital Signs');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Failed to load vital signs:', error);
+            toastr.warning('Could not load vital signs. Please enter manually.', 'Warning');
+        }
+    });
+}
+
 function loadDropdownOptions() {
-    // Load patients
+    // Load patients (DataTables format)
     $.ajax({
         url: '../ajax/get_patients.php',
         method: 'GET',
+        data: { length: 1000 }, // Get all patients
         success: function(response) {
-            if (response.success && response.data) {
+            if (response.data && Array.isArray(response.data)) {
                 let options = '<option value="">Select Patient</option>';
                 response.data.forEach(function(patient) {
                     options += `<option value="${patient.id}">${patient.first_name} ${patient.last_name} (${patient.patient_id})</option>`;
                 });
                 $('#mr_patient_id, #advanced_patient_id, #filter_patient_id').html(options);
             }
+        },
+        error: function(xhr, status, error) {
+            console.error('Failed to load patients:', error);
         }
     });
     
@@ -638,6 +688,18 @@ function loadDropdownOptions() {
 }
 
 function setupEventHandlers() {
+    // Auto-populate vital signs when patient is selected
+    $('#mr_patient_id').on('change', function() {
+        const patientId = $(this).val();
+        if (patientId) {
+            loadPatientVitalSigns(patientId);
+        } else {
+            // Clear vital signs if no patient selected
+            $('#vital_bp, #vital_temp, #vital_hr, #vital_rr, #vital_weight, #vital_height, #vital_spo2, #vital_pain_level').val('');
+            calculateBMI();
+        }
+    });
+    
     // Search functionality
     $('#recordsSearch').on('keypress', function(e) {
         if (e.key === 'Enter') {
@@ -727,7 +789,7 @@ function resetRecordForm() {
     $('#mr_id').val('');
     
     // Clear vital signs
-    $('#vital_bp, #vital_hr, #vital_temp, #vital_weight, #vital_height, #vital_rr, #vital_spo2, #vital_bmi').val('');
+    $('#vital_bp, #vital_hr, #vital_temp, #vital_weight, #vital_height, #vital_rr, #vital_spo2, #vital_pain_level, #vital_bmi').val('');
     
     // Set default date
     const today = new Date().toISOString().split('T')[0];
@@ -745,6 +807,7 @@ function collectVitalSigns() {
         height: $('#vital_height').val(),
         respiratory_rate: $('#vital_rr').val(),
         oxygen_saturation: $('#vital_spo2').val(),
+        pain_level: $('#vital_pain_level').val(),
         bmi: $('#vital_bmi').val()
     };
     
@@ -766,6 +829,7 @@ function populateVitalSigns(vitals) {
     $('#vital_height').val(vitals.height || '');
     $('#vital_rr').val(vitals.respiratory_rate || '');
     $('#vital_spo2').val(vitals.oxygen_saturation || '');
+    $('#vital_pain_level').val(vitals.pain_level || '');
     $('#vital_bmi').val(vitals.bmi || '');
 }
 

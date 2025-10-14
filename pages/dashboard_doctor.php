@@ -1,7 +1,7 @@
 <?php
 $page_title = 'Doctor Dashboard';
 $additional_css = [];
-$additional_js = ['dashboards-doctor.js'];
+$additional_js = ['../assets/js/dashboards-doctor.js'];
 
 include __DIR__ . '/../shared/session_handler.php';
 requireRole(['doctor']);

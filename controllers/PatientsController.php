@@ -96,6 +96,7 @@ class PatientsController {
             $orderSql 
             LIMIT :start, :length
         ";
+        
         $stmt = $this->db->prepare($sql);
         foreach ($params as $k => $v) $stmt->bindValue($k, $v);
         $stmt->bindValue(':start', (int)$start, PDO::PARAM_INT);
@@ -115,7 +116,8 @@ class PatientsController {
                 'date_of_birth' => $r['date_of_birth'],
                 'gender' => $r['gender'],
                 'is_active' => $r['is_active'],
-                'last_visit_date' => $r['last_visit_date']
+                'last_visit_date' => $r['last_visit_date'],
+                'in_queue' => (int)($r['in_queue'] ?? 0)
             ];
         }
 
