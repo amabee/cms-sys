@@ -67,3 +67,5 @@
 [2025-10-14 22:12:04] action=LOGIN user_id=4 message=auth_event
 [2025-10-14 22:17:02] action=LOGOUT user_id=1 message=auth_event
 >>>>>>> Stashed changes
+[2025-10-14 22:38:26] action=login user_id=NULL message=Failed to update last_login
+[2025-10-14 22:38:26] action=LOGIN user_id=4 message=auth_event

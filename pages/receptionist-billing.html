@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default" data-assets-path="../assets/" data-template="vertical-menu-template-free">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Billing & Payments - Clinic CMS</title>
+    
+    <link rel="icon" type="image/x-icon" href="../assets/img/favicon/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/vendor/fonts/boxicons.css" />
+    <link rel="stylesheet" href="../assets/vendor/css/core.css" />
+    <link rel="stylesheet" href="../assets/vendor/css/theme-default.css" />
+    <link rel="stylesheet" href="../assets/css/demo.css" />
+</head>
+
+<body>
+    <div class="layout-wrapper layout-content-navbar">
+        <div class="layout-container">
+            <!-- Sidebar -->
+            <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+                <!-- Loaded via JS -->
+            </aside>
+
+            <div class="layout-page">
+                <!-- Navbar -->
+                <nav id="layout-navbar" class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme">
+                    <!-- Loaded via JS -->
+                </nav>
+
+                <div class="content-wrapper">
+                    <div class="container-xxl flex-grow-1 container-p-y">
+                        <div class="d-flex justify-content-between align-items-center py-3 mb-4">
+                            <h4 class="fw-bold mb-0">
+                                <span class="text-muted fw-light">Receptionist /</span> Billing & Payments
+                            </h4>
+                            <button type="button" class="btn btn-primary" onclick="showCreateBillModal()">
+                                <i class="bx bx-plus me-2"></i>New Bill
+                            </button>
+                        </div>
+
+                        <!-- Stats Row -->
+                        <div class="row mb-4">
+                            <div class="col-lg-3 col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="card-info">
+                                                <p class="card-text">Total Revenue</p>
+                                                <div class="d-flex align-items-end mb-2">
+                                                    <h4 class="mb-0 me-2">₱<span id="totalRevenue">0</span></h4>
+                                                </div>
+                                            </div>
+                                            <div class="card-icon">
+                                                <span class="badge bg-label-success rounded p-2">
+                                                    <i class="bx bx-dollar bx-sm"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-3 col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="card-info">
+                                                <p class="card-text">Pending</p>
+                                                <div class="d-flex align-items-end mb-2">
+                                                    <h4 class="mb-0 me-2">₱<span id="pendingAmount">0</span></h4>
+                                                </div>
+                                            </div>
+                                            <div class="card-icon">
+                                                <span class="badge bg-label-warning rounded p-2">
+                                                    <i class="bx bx-time bx-sm"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-3 col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="card-info">
+                                                <p class="card-text">Paid Today</p>
+                                                <div class="d-flex align-items-end mb-2">
+                                                    <h4 class="mb-0 me-2">₱<span id="paidToday">0</span></h4>
+                                                </div>
+                                            </div>
+                                            <div class="card-icon">
+                                                <span class="badge bg-label-info rounded p-2">
+                                                    <i class="bx bx-check-circle bx-sm"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-lg-3 col-md-6 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="card-info">
+                                                <p class="card-text">Total Bills</p>
+                                                <div class="d-flex align-items-end mb-2">
+                                                    <h4 class="mb-0 me-2" id="totalBills">0</h4>
+                                                </div>
+                                            </div>
+                                            <div class="card-icon">
+                                                <span class="badge bg-label-primary rounded p-2">
+                                                    <i class="bx bx-receipt bx-sm"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Filter Card -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <select class="form-select" id="filterStatus">
+                                            <option value="">All Status</option>
+                                            <option value="pending">Pending</option>
+                                            <option value="paid">Paid</option>
+                                            <option value="partial">Partially Paid</option>
+                                            <option value="cancelled">Cancelled</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="date" class="form-control" id="filterDateFrom" placeholder="From date" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <input type="date" class="form-control" id="filterDateTo" placeholder="To date" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="button" class="btn btn-primary w-100" onclick="applyFilters()">
+                                            <i class="bx bx-filter me-2"></i>Apply
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bills List -->
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Bills</h5>
+                                <span class="badge bg-primary" id="billCount">0</span>
+                            </div>
+                            <div class="card-body">
+                                <div id="billsContainer">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <footer class="content-footer footer bg-footer-theme">
+                        <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
+                            <div class="mb-2 mb-md-0">
+                                © <script>document.write(new Date().getFullYear())</script> Clinic CMS
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            </div>
+        </div>
+
+        <div class="layout-overlay layout-menu-toggle"></div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Record Payment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="paymentForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="billId" />
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Total Amount</label>
+                            <input type="text" class="form-control" id="totalAmount" readonly />
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Amount Paid *</label>
+                            <input type="number" class="form-control" id="amountPaid" step="0.01" required />
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Payment Method *</label>
+                            <select class="form-select" id="paymentMethod" required>
+                                <option value="">Select method</option>
+                                <option value="cash">Cash</option>
+                                <option value="credit_card">Credit Card</option>
+                                <option value="debit_card">Debit Card</option>
+                                <option value="online">Online Transfer</option>
+                                <option value="insurance">Insurance</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" id="paymentNotes" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-check me-2"></i>Record Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core JS -->
+    <script src="../assets/vendor/libs/jquery/jquery.js"></script>
+    <script src="../assets/vendor/libs/popper/popper.js"></script>
+    <script src="../assets/vendor/js/bootstrap.js"></script>
+    <script src="../assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+    
+    <!-- Layout Loader (loads sidebar/navbar BEFORE menu.js) -->
+    <script src="../assets/js/layout-loader.js"></script>
+    
+    <script src="../assets/vendor/js/menu.js"></script>
+    <script src="../assets/js/main.js"></script>
+    
+    <!-- Page JS -->
+    <script src="../assets/js/receptionist-billing.js"></script>
+</body>
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default" data-assets-path="../assets/" data-template="vertical-menu-template-free">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Patient Management - Clinic CMS</title>
+    
+    <link rel="icon" type="image/x-icon" href="../assets/img/favicon/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/vendor/fonts/boxicons.css" />
+    <link rel="stylesheet" href="../assets/vendor/css/core.css" />
+    <link rel="stylesheet" href="../assets/vendor/css/theme-default.css" />
+    <link rel="stylesheet" href="../assets/css/demo.css" />
+</head>
+
+<body>
+    <div class="layout-wrapper layout-content-navbar">
+        <div class="layout-container">
+            <!-- Sidebar -->
+            <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+                <!-- Loaded via JS -->
+            </aside>
+
+            <div class="layout-page">
+                <!-- Navbar -->
+                <nav id="layout-navbar" class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme">
+                    <!-- Loaded via JS -->
+                </nav>
+
+                <div class="content-wrapper">
+                    <div class="container-xxl flex-grow-1 container-p-y">
+                        <div class="d-flex justify-content-between align-items-center py-3 mb-4">
+                            <h4 class="fw-bold mb-0">
+                                <span class="text-muted fw-light">Receptionist /</span> Patients
+                            </h4>
+                            <button type="button" class="btn btn-primary" onclick="showRegisterPatientModal()">
+                                <i class="bx bx-user-plus me-2"></i>Register Patient
+                            </button>
+                        </div>
+
+                        <!-- Search Card -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-10">
+                                        <input type="text" class="form-control" id="searchInput" placeholder="Search by name, phone, email, or patient ID..." />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <button type="button" class="btn btn-primary w-100" onclick="searchPatients()">
+                                            <i class="bx bx-search me-2"></i>Search
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Patients List -->
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Patients</h5>
+                                <span class="badge bg-primary" id="patientCount">0</span>
+                            </div>
+                            <div class="card-body">
+                                <div id="patientsContainer">
+                                    <div class="text-center py-5 text-muted">
+                                        <i class="bx bx-search" style="font-size: 48px;"></i>
+                                        <p class="mt-3">Search for patients or register a new patient</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <footer class="content-footer footer bg-footer-theme">
+                        <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
+                            <div class="mb-2 mb-md-0">
+                                © <script>document.write(new Date().getFullYear())</script> Clinic CMS
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            </div>
+        </div>
+
+        <div class="layout-overlay layout-menu-toggle"></div>
+    </div>
+
+    <!-- Register/Edit Patient Modal -->
+    <div class="modal fade" id="patientModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Register New Patient</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="patientForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="patientIdHidden" />
+                        
+                        <h6 class="text-primary mb-3">Personal Information</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">First Name *</label>
+                                <input type="text" class="form-control" id="firstName" required />
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Last Name *</label>
+                                <input type="text" class="form-control" id="lastName" required />
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Date of Birth *</label>
+                                <input type="date" class="form-control" id="dateOfBirth" required />
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Gender *</label>
+                                <select class="form-select" id="gender" required>
+                                    <option value="">Select gender</option>
+                                    <option value="male">Male</option>
+                                    <option value="female">Female</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Blood Type</label>
+                                <select class="form-select" id="bloodType">
+                                    <option value="">Select blood type</option>
+                                    <option value="A+">A+</option>
+                                    <option value="A-">A-</option>
+                                    <option value="B+">B+</option>
+                                    <option value="B-">B-</option>
+                                    <option value="AB+">AB+</option>
+                                    <option value="AB-">AB-</option>
+                                    <option value="O+">O+</option>
+                                    <option value="O-">O-</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Marital Status</label>
+                                <select class="form-select" id="maritalStatus">
+                                    <option value="">Select status</option>
+                                    <option value="single">Single</option>
+                                    <option value="married">Married</option>
+                                    <option value="divorced">Divorced</option>
+                                    <option value="widowed">Widowed</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <h6 class="text-primary mb-3 mt-4">Contact Information</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Phone *</label>
+                                <input type="tel" class="form-control" id="phone" required />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" />
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Address</label>
+                            <textarea class="form-control" id="address" rows="2"></textarea>
+                        </div>
+                        
+                        <h6 class="text-primary mb-3 mt-4">Emergency Contact</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Emergency Contact Name</label>
+                                <input type="text" class="form-control" id="emergencyContactName" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Emergency Contact Phone</label>
+                                <input type="tel" class="form-control" id="emergencyContactPhone" />
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Medical Notes / Allergies</label>
+                            <textarea class="form-control" id="medicalNotes" rows="3" placeholder="Any important medical information, allergies, etc."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-save me-2"></i>Save Patient
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core JS -->
+    <script src="../assets/vendor/libs/jquery/jquery.js"></script>
+    <script src="../assets/vendor/libs/popper/popper.js"></script>
+    <script src="../assets/vendor/js/bootstrap.js"></script>
+    <script src="../assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+    
+    <!-- Layout Loader (loads sidebar/navbar BEFORE menu.js) -->
+    <script src="../assets/js/layout-loader.js"></script>
+    
+    <script src="../assets/vendor/js/menu.js"></script>
+    <script src="../assets/js/main.js"></script>
+    
+    <!-- Page JS -->
+    <script src="../assets/js/receptionist-patients.js"></script>
+</body>
+</html>

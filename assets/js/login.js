@@ -54,9 +54,23 @@ $(document).ready(function() {
                     // Show success message
                     showAlert(response.message || 'Login successful! Redirecting...', 'success');
                     
-                    // Redirect to dashboard or specified page
+                    // Redirect to dashboard based on user role
                     setTimeout(function() {
-                        window.location.href = response.redirect || 'dashboard.php';
+                        if (response.redirect) {
+                            window.location.href = response.redirect;
+                        } else {
+                            // Default redirects based on role
+                            const role = response.user_type || response.role;
+                            if (role === 'doctor') {
+                                window.location.href = 'pages/doctor-dashboard.html';
+                            } else if (role === 'receptionist') {
+                                window.location.href = 'pages/receptionist-dashboard.html';
+                            } else if (role === 'admin') {
+                                window.location.href = 'index.html';
+                            } else {
+                                window.location.href = 'index.html';
+                            }
+                        }
                     }, 1000);
                 } else {
                     // Show error message

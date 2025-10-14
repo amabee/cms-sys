@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default" data-assets-path="../assets/" data-template="vertical-menu-template-free">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Appointment Management - Clinic CMS</title>
+    
+    <link rel="icon" type="image/x-icon" href="../assets/img/favicon/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/vendor/fonts/boxicons.css" />
+    <link rel="stylesheet" href="../assets/vendor/css/core.css" />
+    <link rel="stylesheet" href="../assets/vendor/css/theme-default.css" />
+    <link rel="stylesheet" href="../assets/css/demo.css" />
+</head>
+
+<body>
+    <div class="layout-wrapper layout-content-navbar">
+        <div class="layout-container">
+            <!-- Sidebar -->
+            <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+                <!-- Loaded via JS -->
+            </aside>
+
+            <div class="layout-page">
+                <!-- Navbar -->
+                <nav id="layout-navbar" class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme">
+                    <!-- Loaded via JS -->
+                </nav>
+
+                <div class="content-wrapper">
+                    <div class="container-xxl flex-grow-1 container-p-y">
+                        <div class="d-flex justify-content-between align-items-center py-3 mb-4">
+                            <h4 class="fw-bold mb-0">
+                                <span class="text-muted fw-light">Receptionist /</span> Appointments
+                            </h4>
+                            <button type="button" class="btn btn-primary" onclick="showCreateAppointmentModal()">
+                                <i class="bx bx-plus me-2"></i>New Appointment
+                            </button>
+                        </div>
+
+                        <!-- Filter Tabs -->
+                        <div class="card mb-4">
+                            <div class="card-body">
+                                <div class="nav-align-top mb-3">
+                                    <ul class="nav nav-pills" role="tablist">
+                                        <li class="nav-item">
+                                            <button type="button" class="nav-link active" data-filter="today" onclick="filterAppointments('today')">
+                                                Today
+                                            </button>
+                                        </li>
+                                        <li class="nav-item">
+                                            <button type="button" class="nav-link" data-filter="upcoming" onclick="filterAppointments('upcoming')">
+                                                Upcoming
+                                            </button>
+                                        </li>
+                                        <li class="nav-item">
+                                            <button type="button" class="nav-link" data-filter="all" onclick="filterAppointments('all')">
+                                                All
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <input type="date" class="form-control" id="filterDate" placeholder="Select date" />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select class="form-select" id="filterDoctor">
+                                            <option value="">All Doctors</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <select class="form-select" id="filterStatus">
+                                            <option value="">All Status</option>
+                                            <option value="scheduled">Scheduled</option>
+                                            <option value="confirmed">Confirmed</option>
+                                            <option value="in-progress">In Progress</option>
+                                            <option value="completed">Completed</option>
+                                            <option value="cancelled">Cancelled</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <button type="button" class="btn btn-primary w-100" onclick="applyFilters()">
+                                            <i class="bx bx-filter me-2"></i>Apply
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Appointments List -->
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Appointments</h5>
+                                <span class="badge bg-primary" id="appointmentCount">0</span>
+                            </div>
+                            <div class="card-body">
+                                <div id="appointmentsContainer">
+                                    <div class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <footer class="content-footer footer bg-footer-theme">
+                        <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
+                            <div class="mb-2 mb-md-0">
+                                © <script>document.write(new Date().getFullYear())</script> Clinic CMS
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            </div>
+        </div>
+
+        <div class="layout-overlay layout-menu-toggle"></div>
+    </div>
+
+    <!-- Create/Edit Appointment Modal -->
+    <div class="modal fade" id="appointmentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">New Appointment</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="appointmentForm">
+                    <div class="modal-body">
+                        <input type="hidden" id="appointmentId" />
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Patient *</label>
+                            <select class="form-select" id="patientId" required>
+                                <option value="">Select patient</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Doctor *</label>
+                            <select class="form-select" id="doctorId" required>
+                                <option value="">Select doctor</option>
+                            </select>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Appointment Date *</label>
+                                <input type="date" class="form-control" id="appointmentDate" required />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Time *</label>
+                                <input type="time" class="form-control" id="appointmentTime" required />
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Reason for Visit *</label>
+                            <textarea class="form-control" id="reason" rows="2" required></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Notes</label>
+                            <textarea class="form-control" id="notes" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-save me-2"></i>Save
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core JS -->
+    <script src="../assets/vendor/libs/jquery/jquery.js"></script>
+    <script src="../assets/vendor/libs/popper/popper.js"></script>
+    <script src="../assets/vendor/js/bootstrap.js"></script>
+    <script src="../assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+    
+    <!-- Layout Loader (loads sidebar/navbar BEFORE menu.js) -->
+    <script src="../assets/js/layout-loader.js"></script>
+    
+    <script src="../assets/vendor/js/menu.js"></script>
+    <script src="../assets/js/main.js"></script>
+    
+    <!-- Page JS -->
+    <script src="../assets/js/receptionist-appointments.js"></script>
+</body>
+</html>

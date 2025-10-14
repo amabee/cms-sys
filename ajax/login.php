@@ -51,7 +51,7 @@ try {
     }
     
     // Attempt login
-    $sql = "SELECT id, username, email, password, role, is_active, last_login 
+    $sql = "SELECT id, username, email, password, role, is_active, last_login, first_name, last_name 
             FROM users 
             WHERE (username = ? OR email = ?) 
             LIMIT 1";
@@ -62,10 +62,10 @@ try {
     
     if (!$user) {
         // Record failed attempt in database manually
-        $sql = "INSERT INTO login_attempts (username, ip_address, attempted_at, success) 
-                VALUES (?, ?, NOW(), 0)";
+        $sql = "INSERT INTO login_attempts (username, ip_address, user_agent, success, failure_reason, attempt_time) 
+                VALUES (?, ?, ?, 0, 'Invalid username', NOW())";
         $stmt = $conn->prepare($sql);
-        $stmt->execute([$username, $_SERVER['REMOTE_ADDR']]);
+        $stmt->execute([$username, $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT'] ?? '']);
         
         throw new Exception('Invalid username or password');
     }
@@ -73,10 +73,10 @@ try {
     // Verify password
     if (!password_verify($password, $user['password'])) {
         // Record failed attempt in database manually
-        $sql = "INSERT INTO login_attempts (username, ip_address, attempted_at, success) 
-                VALUES (?, ?, NOW(), 0)";
+        $sql = "INSERT INTO login_attempts (username, ip_address, user_agent, success, failure_reason, attempt_time) 
+                VALUES (?, ?, ?, 0, 'Invalid password', NOW())";
         $stmt = $conn->prepare($sql);
-        $stmt->execute([$username, $_SERVER['REMOTE_ADDR']]);
+        $stmt->execute([$username, $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT'] ?? '']);
         
         throw new Exception('Invalid username or password');
     }
@@ -96,6 +96,8 @@ try {
     $_SESSION['username'] = $user['username'];
     $_SESSION['email'] = $user['email'];
     $_SESSION['user_type'] = $user['role'];
+    $_SESSION['first_name'] = $user['first_name'];
+    $_SESSION['last_name'] = $user['last_name'];
     $_SESSION['login_time'] = time();
     $_SESSION['ip_address'] = $_SERVER['REMOTE_ADDR'];
     $_SESSION['user_agent'] = $_SERVER['HTTP_USER_AGENT'] ?? '';
@@ -121,31 +123,31 @@ try {
     $stmt->execute([$user['id']]);
     
     // Log successful login manually
-    $sql = "INSERT INTO login_attempts (username, ip_address, attempted_at, success, user_id) 
-            VALUES (?, ?, NOW(), 1, ?)";
+    $sql = "INSERT INTO login_attempts (username, ip_address, user_agent, success, attempt_time) 
+            VALUES (?, ?, ?, 1, NOW())";
     $stmt = $conn->prepare($sql);
-    $stmt->execute([$username, $_SERVER['REMOTE_ADDR'], $user['id']]);
+    $stmt->execute([$username, $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT'] ?? '']);
     
     // Determine redirect URL based on user type
-    $redirectUrl = 'dashboard.php';
+    $redirectUrl = 'index.html';
     switch ($user['role']) {
         case 'admin':
-            $redirectUrl = 'pages/admin-dashboard.php';
+            $redirectUrl = 'index.html';
             break;
         case 'doctor':
-            $redirectUrl = 'pages/doctor-dashboard.php';
+            $redirectUrl = 'pages/doctor-dashboard.html';
             break;
         case 'nurse':
-            $redirectUrl = 'pages/nurse-dashboard.php';
+            $redirectUrl = 'pages/nurse-dashboard.html';
             break;
         case 'receptionist':
-            $redirectUrl = 'pages/receptionist-dashboard.php';
+            $redirectUrl = 'pages/receptionist-dashboard.html';
             break;
         case 'patient':
-            $redirectUrl = 'pages/patient-dashboard.php';
+            $redirectUrl = 'pages/patient-dashboard.html';
             break;
         default:
-            $redirectUrl = 'dashboard.php';
+            $redirectUrl = 'index.html';
     }
     
     // Success response

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default" data-assets-path="../assets/" data-template="vertical-menu-template-free">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Prescriptions - Clinic CMS</title>
+    
+    <link rel="icon" type="image/x-icon" href="../assets/img/favicon/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/vendor/fonts/boxicons.css" />
+    <link rel="stylesheet" href="../assets/vendor/css/core.css" />
+    <link rel="stylesheet" href="../assets/vendor/css/theme-default.css" />
+    <link rel="stylesheet" href="../assets/css/demo.css" />
+</head>
+
+<body>
+    <div class="layout-wrapper layout-content-navbar">
+        <div class="layout-container">
+            <!-- Sidebar -->
+            <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+                <!-- Loaded via JS -->
+            </aside>
+
+            <div class="layout-page">
+                <!-- Navbar -->
+                <nav id="layout-navbar" class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme">
+                    <!-- Loaded via JS -->
+                </nav>
+
+                <div class="content-wrapper">
+                    <div class="container-xxl flex-grow-1 container-p-y">
+                        <h4 class="fw-bold py-3 mb-4">
+                            <span class="text-muted fw-light">Doctor /</span> Prescriptions
+                        </h4>
+
+                        <!-- Patient Info Card -->
+                        <div class="card mb-4" id="patientInfoCard" style="display: none;">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col-md-8">
+                                        <h5 id="patientName">--</h5>
+                                        <p class="text-muted mb-0">Patient ID: <span id="patientId">--</span></p>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <button type="button" class="btn btn-primary" onclick="showCreatePrescriptionModal()">
+                                            <i class="bx bx-plus me-2"></i>New Prescription
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Prescriptions List -->
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">Prescription History</h5>
+                                <span class="badge bg-primary" id="prescriptionCount">0</span>
+                            </div>
+                            <div class="card-body">
+                                <div id="prescriptionsContainer">
+                                    <div class="text-center py-5 text-muted">
+                                        <i class="bx bx-receipt" style="font-size: 48px;"></i>
+                                        <p class="mt-3">Select a patient to view prescriptions</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <footer class="content-footer footer bg-footer-theme">
+                        <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
+                            <div class="mb-2 mb-md-0">
+                                © <script>document.write(new Date().getFullYear())</script> Clinic CMS
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            </div>
+        </div>
+
+        <div class="layout-overlay layout-menu-toggle"></div>
+    </div>
+
+    <!-- Create Prescription Modal -->
+    <div class="modal fade" id="prescriptionModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">New Prescription</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="prescriptionForm">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Medication Name *</label>
+                            <input type="text" class="form-control" id="medicationName" required />
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Dosage *</label>
+                                <input type="text" class="form-control" id="dosage" placeholder="e.g., 500mg" required />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Frequency *</label>
+                                <select class="form-select" id="frequency" required>
+                                    <option value="">Select frequency</option>
+                                    <option value="Once daily">Once daily</option>
+                                    <option value="Twice daily">Twice daily</option>
+                                    <option value="Three times daily">Three times daily</option>
+                                    <option value="Four times daily">Four times daily</option>
+                                    <option value="Every 4 hours">Every 4 hours</option>
+                                    <option value="Every 6 hours">Every 6 hours</option>
+                                    <option value="Every 8 hours">Every 8 hours</option>
+                                    <option value="As needed">As needed</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Duration *</label>
+                                <input type="text" class="form-control" id="duration" placeholder="e.g., 7 days" required />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Quantity</label>
+                                <input type="number" class="form-control" id="quantity" placeholder="30" />
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Instructions</label>
+                            <textarea class="form-control" id="instructions" rows="3" placeholder="Take with food, etc."></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-save me-2"></i>Save Prescription
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core JS -->
+    <script src="../assets/vendor/libs/jquery/jquery.js"></script>
+    <script src="../assets/vendor/libs/popper/popper.js"></script>
+    <script src="../assets/vendor/js/bootstrap.js"></script>
+    <script src="../assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+    
+    <!-- Menu.js - Will be initialized by layout-loader -->
+    <script src="../assets/vendor/js/menu.js"></script>
+    
+    <!-- Layout Loader (loads sidebar/navbar and initializes menu) -->
+    <script src="../assets/js/layout-loader.js"></script>
+    
+    <!-- Page JS -->
+    <script src="../assets/js/doctor-prescriptions.js"></script>
+</body>
+</html>

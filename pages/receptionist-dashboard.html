@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en" class="light-style layout-menu-fixed" dir="ltr" data-theme="theme-default" data-assets-path="../assets/" data-template="vertical-menu-template-free">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Receptionist Dashboard - Clinic CMS</title>
+    
+    <link rel="icon" type="image/x-icon" href="../assets/img/favicon/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="../assets/vendor/fonts/boxicons.css" />
+    <link rel="stylesheet" href="../assets/vendor/css/core.css" />
+    <link rel="stylesheet" href="../assets/vendor/css/theme-default.css" />
+    <link rel="stylesheet" href="../assets/css/demo.css" />
+</head>
+
+<body>
+    <div class="layout-wrapper layout-content-navbar">
+        <div class="layout-container">
+            <!-- Sidebar will be injected -->
+            <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
+                <!-- Loaded via JS -->
+            </aside>
+
+            <div class="layout-page">
+                <!-- Navbar will be injected -->
+                <nav id="layout-navbar" class="layout-navbar container-xxl navbar navbar-expand-xl navbar-detached align-items-center bg-navbar-theme">
+                    <!-- Loaded via JS -->
+                </nav>
+
+                <div class="content-wrapper">
+                    <div class="container-xxl flex-grow-1 container-p-y">
+                        <!-- Welcome Card -->
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h4 class="mb-1">Welcome back, <span id="receptionistName">Receptionist</span>! 👋</h4>
+                                        <p class="mb-0">Manage appointments, patients, and front desk operations.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Quick Actions -->
+                            <div class="col-12 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h5 class="card-title mb-3">Quick Actions</h5>
+                                        <div class="row">
+                                            <div class="col-md-3 col-sm-6 mb-3">
+                                                <button class="btn btn-primary w-100" onclick="window.location.href='receptionist-appointments.html'">
+                                                    <i class="bx bx-calendar-plus me-2"></i>
+                                                    New Appointment
+                                                </button>
+                                            </div>
+                                            <div class="col-md-3 col-sm-6 mb-3">
+                                                <button class="btn btn-success w-100" onclick="window.location.href='receptionist-patients.html?action=new'">
+                                                    <i class="bx bx-user-plus me-2"></i>
+                                                    Register Patient
+                                                </button>
+                                            </div>
+                                            <div class="col-md-3 col-sm-6 mb-3">
+                                                <button class="btn btn-info w-100" onclick="window.location.href='receptionist-queue.html'">
+                                                    <i class="bx bx-list-ul me-2"></i>
+                                                    Manage Queue
+                                                </button>
+                                            </div>
+                                            <div class="col-md-3 col-sm-6 mb-3">
+                                                <button class="btn btn-warning w-100" onclick="window.location.href='receptionist-billing.html'">
+                                                    <i class="bx bx-dollar me-2"></i>
+                                                    Billing
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Stats Cards -->
+                            <div class="col-lg-3 col-md-6 col-sm-6 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="card-info">
+                                                <p class="card-text">Today's Appointments</p>
+                                                <div class="d-flex align-items-end mb-2">
+                                                    <h4 class="mb-0 me-2" id="todayAppointments">0</h4>
+                                                </div>
+                                                <small class="text-muted">Scheduled for today</small>
+                                            </div>
+                                            <div class="card-icon">
+                                                <span class="badge bg-label-primary rounded p-2">
+                                                    <i class="bx bx-calendar bx-sm"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 col-sm-6 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="card-info">
+                                                <p class="card-text">Patients in Queue</p>
+                                                <div class="d-flex align-items-end mb-2">
+                                                    <h4 class="mb-0 me-2" id="patientsInQueue">0</h4>
+                                                </div>
+                                                <small class="text-muted">Waiting</small>
+                                            </div>
+                                            <div class="card-icon">
+                                                <span class="badge bg-label-warning rounded p-2">
+                                                    <i class="bx bx-group bx-sm"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 col-sm-6 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="card-info">
+                                                <p class="card-text">Total Patients</p>
+                                                <div class="d-flex align-items-end mb-2">
+                                                    <h4 class="mb-0 me-2" id="totalPatients">0</h4>
+                                                </div>
+                                                <small class="text-muted">Registered</small>
+                                            </div>
+                                            <div class="card-icon">
+                                                <span class="badge bg-label-success rounded p-2">
+                                                    <i class="bx bx-user bx-sm"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-lg-3 col-md-6 col-sm-6 mb-4">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between">
+                                            <div class="card-info">
+                                                <p class="card-text">Pending Payments</p>
+                                                <div class="d-flex align-items-end mb-2">
+                                                    <h4 class="mb-0 me-2" id="pendingPayments">0</h4>
+                                                </div>
+                                                <small class="text-muted">Unpaid bills</small>
+                                            </div>
+                                            <div class="card-icon">
+                                                <span class="badge bg-label-danger rounded p-2">
+                                                    <i class="bx bx-receipt bx-sm"></i>
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Today's Appointments List -->
+                            <div class="col-12 mb-4">
+                                <div class="card">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Today's Appointments</h5>
+                                        <a href="receptionist-appointments.html" class="btn btn-sm btn-primary">View All</a>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="todayAppointmentsContainer">
+                                            <div class="text-center py-4">
+                                                <div class="spinner-border text-primary" role="status">
+                                                    <span class="visually-hidden">Loading...</span>
+                                                </div>
+                                                <p class="text-muted mt-2">Loading appointments...</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <footer class="content-footer footer bg-footer-theme">
+                        <div class="container-xxl d-flex flex-wrap justify-content-between py-2 flex-md-row flex-column">
+                            <div class="mb-2 mb-md-0">
+                                © <script>document.write(new Date().getFullYear())</script> Clinic CMS
+                            </div>
+                        </div>
+                    </footer>
+                </div>
+            </div>
+        </div>
+
+        <div class="layout-overlay layout-menu-toggle"></div>
+    </div>
+
+    <!-- Core JS -->
+    <script src="../assets/vendor/libs/jquery/jquery.js"></script>
+    <script src="../assets/vendor/libs/popper/popper.js"></script>
+    <script src="../assets/vendor/js/bootstrap.js"></script>
+    <script src="../assets/vendor/libs/perfect-scrollbar/perfect-scrollbar.js"></script>
+    
+    <!-- Layout Loader (loads sidebar/navbar BEFORE menu.js) -->
+    <script src="../assets/js/layout-loader.js"></script>
+    
+    <script src="../assets/vendor/js/menu.js"></script>
+    <script src="../assets/js/main.js"></script>
+    
+    <!-- Page JS -->
+    <script src="../assets/js/receptionist-dashboard.js"></script>
+</body>
+</html>
