@@ -34,6 +34,8 @@ return [
 
   'appointments.php' => ['admin', 'doctor', 'secretary', 'receptionist', 'patient'],
   'appointment-details.php' => ['admin', 'doctor', 'secretary', 'receptionist', 'patient'],
+  'notifications.php' => ['admin', 'doctor', 'secretary', 'receptionist'],
+  'reports.php' => ['admin', 'doctor', 'secretary', 'receptionist'],
 
   'medical-records.php' => ['admin', 'doctor', 'secretary', 'receptionist'],
   'medical-record-details.php' => ['admin', 'doctor'],

@@ -131,12 +131,13 @@ if (isset($page_aliases[$current_page])) {
           <div data-i18n="Lab Tests">Lab Tests</div>
         </a>
       </li>
-      <li class="menu-item <?php echo isMenuActive('prescriptions', $current_page); ?>">
+      <!-- HIDDEN FOR NOW -->
+      <!-- <li class="menu-item <?php echo isMenuActive('prescriptions', $current_page); ?>">
         <a href="./prescriptions.php" class="menu-link">
           <i class="menu-icon tf-icons bx bx-prescription"></i>
           <div data-i18n="Prescriptions">Prescriptions</div>
         </a>
-      </li>
+      </li> -->
       <?php if (in_array($user_type, ['admin', 'doctor'])): ?>
       <li class="menu-item <?php echo isMenuActive('reports', $current_page); ?>">
         <a href="./reports.php" class="menu-link">
