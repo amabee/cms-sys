@@ -1,6 +1,15 @@
 <?php
+<<<<<<< Updated upstream
 require_once 'shared/header.php';
 require_once 'controllers/SystemSettingsController.php';
+=======
+$page_title = 'System Settings';
+$additional_css = [];
+$additional_js = [
+  '../assets/js/system-settings.js',
+  "https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
+];
+>>>>>>> Stashed changes
 
 // Check if user has admin access
 if (!isset($_SESSION['role']) || !in_array($_SESSION['role'], ['admin', 'manager'])) {
@@ -300,6 +309,7 @@ $systemStats = $controller->getSystemStatistics();
     </div>
 </div>
 
+<<<<<<< Updated upstream
 <!-- Loading Modal -->
 <div class="modal fade" id="loadingModal" tabindex="-1" data-backdrop="static" data-keyboard="false">
     <div class="modal-dialog modal-sm">
@@ -500,6 +510,20 @@ $systemStats = $controller->getSystemStatistics();
               </tr>
             </table>
           </div>
+=======
+
+<!-- Sneat Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-modal="true" role="dialog">
+  <div class="modal-dialog modal-sm modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title w-100 text-center">Please wait...</h5>
+      </div>
+      <div class="modal-body text-center">
+        <div class="d-flex justify-content-center align-items-center flex-column">
+          <div class="spinner-border text-primary mb-3" role="status"></div>
+          <p id="loadingMessage" class="mb-0">Processing...</p>
+>>>>>>> Stashed changes
         </div>
       </div>
     </div>
