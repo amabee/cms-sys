@@ -189,12 +189,12 @@ class BillingController {
             $sql = "
                 INSERT INTO billing (
                     bill_id, patient_id, appointment_id, consultation_fee, lab_charges, 
-                    medication_charges, other_charges, total_amount, discount_amount, 
+                    medication_charges, other_charges, notes, total_amount, discount_amount, 
                     tax_amount, paid_amount, balance_amount, payment_status, 
                     payment_method, bill_date, due_date, payment_date, created_by
                 ) VALUES (
                     :bill_id, :patient_id, :appointment_id, :consultation_fee, :lab_charges,
-                    :medication_charges, :other_charges, :total_amount, :discount_amount,
+                    :medication_charges, :other_charges, :notes, :total_amount, :discount_amount,
                     :tax_amount, :paid_amount, :balance_amount, :payment_status,
                     :payment_method, :bill_date, :due_date, :payment_date, :created_by
                 )
@@ -207,6 +207,7 @@ class BillingController {
             $stmt->bindValue(':consultation_fee', $consultation_fee);
             $stmt->bindValue(':lab_charges', $lab_charges);
             $stmt->bindValue(':medication_charges', $medication_charges);
+            $stmt->bindValue(':notes', isset($data['notes']) ? $data['notes'] : null);
             $stmt->bindValue(':other_charges', $other_charges);
             $stmt->bindValue(':total_amount', $final_total);
             $stmt->bindValue(':discount_amount', $discount_amount);
@@ -278,6 +279,7 @@ class BillingController {
                     consultation_fee = :consultation_fee,
                     lab_charges = :lab_charges,
                     medication_charges = :medication_charges,
+                    notes = :notes,
                     other_charges = :other_charges,
                     total_amount = :total_amount,
                     discount_amount = :discount_amount,
@@ -297,6 +299,7 @@ class BillingController {
             $stmt->bindValue(':consultation_fee', $consultation_fee);
             $stmt->bindValue(':lab_charges', $lab_charges);
             $stmt->bindValue(':medication_charges', $medication_charges);
+            $stmt->bindValue(':notes', isset($data['notes']) ? $data['notes'] : ($current['notes'] ?? null));
             $stmt->bindValue(':other_charges', $other_charges);
             $stmt->bindValue(':total_amount', $final_total);
             $stmt->bindValue(':discount_amount', $discount_amount);

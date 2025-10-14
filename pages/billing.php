@@ -812,33 +812,119 @@ ob_start();
   }
 
   function viewBill(billingId) {
-    // Load bill details and show in modal
+    // Load bill details and show in modal using Bootstrap's Modal API
     $.ajax({
       url: '../ajax/get_billing_details.php',
       method: 'GET',
       data: { id: billingId },
       success: function(response) {
-        if (response.success) {
+        console.debug('viewBill response', response);
+        if (response && response.success) {
           const bill = response.data;
-          // Build simple view HTML
+
+          // Build invoice-style HTML for modal
           let html = `
-            <div class="mb-2"><strong>Bill ID:</strong> ${bill.bill_id}</div>
-            <div class="mb-2"><strong>Patient:</strong> ${bill.patient_name} (${bill.patient_code || ''})</div>
-            <div class="mb-2"><strong>Billing Date:</strong> ${bill.bill_date}</div>
-            <div class="mb-2"><strong>Consultation Fee:</strong> ₱${parseFloat(bill.consultation_fee || 0).toFixed(2)}</div>
-            <div class="mb-2"><strong>Lab Charges:</strong> ₱${parseFloat(bill.lab_charges || 0).toFixed(2)}</div>
-            <div class="mb-2"><strong>Medication Charges:</strong> ₱${parseFloat(bill.medication_charges || 0).toFixed(2)}</div>
-            <div class="mb-2"><strong>Total Amount:</strong> ₱${parseFloat(bill.total_amount || 0).toFixed(2)}</div>
-            <div class="mb-2"><strong>Paid Amount:</strong> ₱${parseFloat(bill.paid_amount || 0).toFixed(2)}</div>
-            <div class="mb-2"><strong>Balance:</strong> ₱${parseFloat(bill.balance_amount || 0).toFixed(2)}</div>
-            <div class="mb-2"><strong>Notes:</strong> ${bill.notes || ''}</div>
+            <div class="invoice">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                  <h4 class="mb-0">Polymedic Clinic</h4>
+                  <small class="text-muted">Billing Management</small>
+                </div>
+                <div class="text-end">
+                  <strong>Bill #: </strong>${bill.bill_id}<br>
+                  <small class="text-muted">Date: ${bill.bill_date}</small>
+                </div>
+              </div>
+
+              <div class="row mb-3">
+                <div class="col-sm-6">
+                  <h6 class="mb-1">Patient</h6>
+                  <div>${bill.patient_name}</div>
+                  <div class="text-muted">${bill.patient_phone || ''} ${bill.patient_email ? ' | ' + bill.patient_email : ''}</div>
+                </div>
+                <div class="col-sm-6 text-sm-end">
+                  <h6 class="mb-1">Doctor</h6>
+                  <div>${bill.doctor_name || ''}</div>
+                  <div class="text-muted">Appointment: ${bill.appointment_date || 'N/A'}</div>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table table-borderless">
+                  <tbody>
+                    <tr>
+                      <td>Consultation</td>
+                      <td class="text-end">₱${parseFloat(bill.consultation_fee || 0).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                      <td>Lab Charges</td>
+                      <td class="text-end">₱${parseFloat(bill.lab_charges || 0).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                      <td>Medication</td>
+                      <td class="text-end">₱${parseFloat(bill.medication_charges || 0).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                      <td>Other Charges</td>
+                      <td class="text-end">₱${parseFloat(bill.other_charges || 0).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                      <td>Discount</td>
+                      <td class="text-end">₱${parseFloat(bill.discount_amount || 0).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                      <td>Tax</td>
+                      <td class="text-end">₱${parseFloat(bill.tax_amount || 0).toFixed(2)}</td>
+                    </tr>
+                    <tr class="fw-bold border-top">
+                      <td>Total</td>
+                      <td class="text-end">₱${parseFloat(bill.total_amount || 0).toFixed(2)}</td>
+                    </tr>
+                    <tr>
+                      <td>Paid</td>
+                      <td class="text-end">₱${parseFloat(bill.paid_amount || 0).toFixed(2)}</td>
+                    </tr>
+                    <tr class="fw-bold border-top">
+                      <td>Balance</td>
+                      <td class="text-end">₱${parseFloat(bill.balance_amount || 0).toFixed(2)}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <div class="mt-3">
+                <h6 class="mb-1">Notes</h6>
+                <div class="text-muted">${bill.notes || '-'}</div>
+              </div>
+            </div>
           `;
 
           $('#viewBillModal .modal-body').html(html);
-                $('#viewBillModal').data('billing-id', billingId);
-          $('#viewBillModal').modal('show');
+          $('#viewBillModal').data('billing-id', billingId);
+          // Ensure modal is a direct child of body to avoid being clipped by parent overflow
+          try {
+            var viewModalEl = document.getElementById('viewBillModal');
+            if (viewModalEl && viewModalEl.parentNode !== document.body) {
+              document.body.appendChild(viewModalEl);
+              console.debug('Moved viewBillModal to document.body');
+            }
+
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+              var viewModal = bootstrap.Modal.getOrCreateInstance(viewModalEl);
+              viewModal.show();
+            } else if (typeof jQuery !== 'undefined') {
+              // Fallback for older setups
+              $('#viewBillModal').modal('show');
+            } else {
+              console.error('No modal API available to show viewBillModal');
+            }
+          } catch (ex) {
+            console.error('Error showing viewBillModal', ex);
+            // As a last resort, try jQuery.
+            try { $('#viewBillModal').modal('show'); } catch(e){}
+          }
         } else {
-          showAlert('error', response.message || 'Failed to load bill details');
+          showAlert('error', (response && response.message) || 'Failed to load bill details');
         }
       },
       error: function() {
@@ -846,7 +932,7 @@ ob_start();
       }
     });
 
-    // Print button inside view modal
+    // Print button inside view modal (bound once)
     $('#printFromView').on('click', function() {
       const id = $('#viewBillModal').data('billing-id');
       if (id) printBill(id);
@@ -862,18 +948,76 @@ ob_start();
       success: function(response) {
         if (response.success) {
           const bill = response.data;
-          const printHtml = `
-            <html>
-            <head><title>Print Bill ${bill.bill_id}</title></head>
-            <body>
-              <h2>Bill ${bill.bill_id}</h2>
-              <p><strong>Patient:</strong> ${bill.patient_name}</p>
-              <p><strong>Date:</strong> ${bill.bill_date}</p>
-              <p><strong>Total:</strong> ₱${parseFloat(bill.total_amount || 0).toFixed(2)}</p>
-              <!-- Add more fields as needed -->
-            </body>
-            </html>
-          `;
+                const printHtml = `
+                  <html>
+                  <head>
+                    <title>Print Bill ${bill.bill_id}</title>
+                    <style>
+                      body { font-family: Arial, Helvetica, sans-serif; color: #333; padding: 20px; }
+                      .invoice { max-width: 800px; margin: 0 auto; }
+                      .text-end { text-align: right; }
+                      table { width: 100%; border-collapse: collapse; }
+                      td { padding: 6px 4px; }
+                      .border-top { border-top: 1px solid #ddd; }
+                    </style>
+                  </head>
+                  <body>
+                    <div class="invoice">
+                      <div style="display:flex;justify-content:space-between;align-items:center;">
+                        <div>
+                          <h3>Polymedic Clinic</h3>
+                          <div>Billing Management</div>
+                        </div>
+                        <div>
+                          <strong>Bill #: </strong>${bill.bill_id}<br>
+                          <small>${bill.bill_date}</small>
+                        </div>
+                      </div>
+
+                      <hr>
+
+                      <div style="display:flex;justify-content:space-between;">
+                        <div>
+                          <strong>Patient</strong><br>
+                          ${bill.patient_name}<br>
+                          <small class="text-muted">${bill.patient_phone || ''} ${bill.patient_email ? ' | ' + bill.patient_email : ''}</small>
+                        </div>
+                        <div style="text-align:right;">
+                          <strong>Doctor</strong><br>
+                          ${bill.doctor_name || ''}<br>
+                          <small class="text-muted">Appointment: ${bill.appointment_date || 'N/A'}</small>
+                        </div>
+                      </div>
+
+                      <table style="margin-top:20px;">
+                        <tbody>
+                          <tr>
+                            <td>Consultation</td>
+                            <td class="text-end">₱${parseFloat(bill.consultation_fee || 0).toFixed(2)}</td>
+                          </tr>
+                          <tr>
+                            <td>Lab Charges</td>
+                            <td class="text-end">₱${parseFloat(bill.lab_charges || 0).toFixed(2)}</td>
+                          </tr>
+                          <tr>
+                            <td>Medication</td>
+                            <td class="text-end">₱${parseFloat(bill.medication_charges || 0).toFixed(2)}</td>
+                          </tr>
+                          <tr>
+                            <td class="border-top"><strong>Total</strong></td>
+                            <td class="text-end border-top"><strong>₱${parseFloat(bill.total_amount || 0).toFixed(2)}</strong></td>
+                          </tr>
+                        </tbody>
+                      </table>
+
+                      <div style="margin-top:30px;">
+                        <strong>Notes</strong>
+                        <div style="color:#666">${bill.notes || '-'}</div>
+                      </div>
+                    </div>
+                  </body>
+                  </html>
+                `;
 
           const w = window.open('', '_blank');
           w.document.write(printHtml);
