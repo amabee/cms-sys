@@ -223,11 +223,14 @@ function loadPatientDemographics() {
  * Load Appointment Analytics Report
  */
 function loadAppointmentAnalytics() {
+    console.log('loadAppointmentAnalytics called'); // Debug log
     currentReportType = 'appointment_analytics';
     
     const startDate = document.getElementById('appointments-start-date').value;
     const endDate = document.getElementById('appointments-end-date').value;
     const doctorId = document.getElementById('appointments-doctor').value;
+    
+    console.log('Dates:', startDate, endDate, 'Doctor:', doctorId); // Debug log
     
     showLoading('appointments-loading');
     hideContent('appointments-content');
@@ -960,19 +963,35 @@ function populateRecordsSummary(data) {
  */
 
 function showLoading(elementId) {
-    document.getElementById(elementId).style.display = 'block';
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.classList.remove('d-none');
+        element.style.display = 'block';
+    }
 }
 
 function hideLoading(elementId) {
-    document.getElementById(elementId).style.display = 'none';
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.classList.add('d-none');
+        element.style.display = 'none';
+    }
 }
 
 function showContent(elementId) {
-    document.getElementById(elementId).style.display = 'block';
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.classList.remove('d-none');
+        element.style.display = 'block';
+    }
 }
 
 function hideContent(elementId) {
-    document.getElementById(elementId).style.display = 'none';
+    const element = document.getElementById(elementId);
+    if (element) {
+        element.classList.add('d-none');
+        element.style.display = 'none';
+    }
 }
 
 function showError(message) {
