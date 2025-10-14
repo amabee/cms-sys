@@ -315,6 +315,25 @@ ob_start();
             </div>
           </div>
 
+              <!-- View Bill Modal -->
+              <div class="modal fade" id="viewBillModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                  <div class="modal-content">
+                    <div class="modal-header">
+                      <h5 class="modal-title">Bill Details</h5>
+                      <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                      <!-- Filled dynamically -->
+                    </div>
+                    <div class="modal-footer">
+                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                      <button type="button" class="btn btn-primary" id="printFromView">Print</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
           <div class="row">
             <div class="col-md-4 mb-3">
               <label for="edit_discount" class="form-label">Discount</label>
@@ -793,13 +812,82 @@ ob_start();
   }
 
   function viewBill(billingId) {
-    // Implement view functionality - could open a detailed view modal or redirect
-    window.open(`../reports/bill_details.php?id=${billingId}`, '_blank');
+    // Load bill details and show in modal
+    $.ajax({
+      url: '../ajax/get_billing_details.php',
+      method: 'GET',
+      data: { id: billingId },
+      success: function(response) {
+        if (response.success) {
+          const bill = response.data;
+          // Build simple view HTML
+          let html = `
+            <div class="mb-2"><strong>Bill ID:</strong> ${bill.bill_id}</div>
+            <div class="mb-2"><strong>Patient:</strong> ${bill.patient_name} (${bill.patient_code || ''})</div>
+            <div class="mb-2"><strong>Billing Date:</strong> ${bill.bill_date}</div>
+            <div class="mb-2"><strong>Consultation Fee:</strong> ₱${parseFloat(bill.consultation_fee || 0).toFixed(2)}</div>
+            <div class="mb-2"><strong>Lab Charges:</strong> ₱${parseFloat(bill.lab_charges || 0).toFixed(2)}</div>
+            <div class="mb-2"><strong>Medication Charges:</strong> ₱${parseFloat(bill.medication_charges || 0).toFixed(2)}</div>
+            <div class="mb-2"><strong>Total Amount:</strong> ₱${parseFloat(bill.total_amount || 0).toFixed(2)}</div>
+            <div class="mb-2"><strong>Paid Amount:</strong> ₱${parseFloat(bill.paid_amount || 0).toFixed(2)}</div>
+            <div class="mb-2"><strong>Balance:</strong> ₱${parseFloat(bill.balance_amount || 0).toFixed(2)}</div>
+            <div class="mb-2"><strong>Notes:</strong> ${bill.notes || ''}</div>
+          `;
+
+          $('#viewBillModal .modal-body').html(html);
+                $('#viewBillModal').data('billing-id', billingId);
+          $('#viewBillModal').modal('show');
+        } else {
+          showAlert('error', response.message || 'Failed to load bill details');
+        }
+      },
+      error: function() {
+        showAlert('error', 'Failed to load bill details');
+      }
+    });
+
+    // Print button inside view modal
+    $('#printFromView').on('click', function() {
+      const id = $('#viewBillModal').data('billing-id');
+      if (id) printBill(id);
+    });
   }
 
   function printBill(billingId) {
-    // Implement print functionality
-    window.open(`../reports/print_bill.php?id=${billingId}`, '_blank');
+    // Load bill details and open print window
+    $.ajax({
+      url: '../ajax/get_billing_details.php',
+      method: 'GET',
+      data: { id: billingId },
+      success: function(response) {
+        if (response.success) {
+          const bill = response.data;
+          const printHtml = `
+            <html>
+            <head><title>Print Bill ${bill.bill_id}</title></head>
+            <body>
+              <h2>Bill ${bill.bill_id}</h2>
+              <p><strong>Patient:</strong> ${bill.patient_name}</p>
+              <p><strong>Date:</strong> ${bill.bill_date}</p>
+              <p><strong>Total:</strong> ₱${parseFloat(bill.total_amount || 0).toFixed(2)}</p>
+              <!-- Add more fields as needed -->
+            </body>
+            </html>
+          `;
+
+          const w = window.open('', '_blank');
+          w.document.write(printHtml);
+          w.document.close();
+          w.focus();
+          w.print();
+        } else {
+          showAlert('error', response.message || 'Failed to load bill for printing');
+        }
+      },
+      error: function() {
+        showAlert('error', 'Failed to load bill for printing');
+      }
+    });
   }
 
   function deleteBill(billingId) {
