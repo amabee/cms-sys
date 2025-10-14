@@ -3,81 +3,95 @@
  */
 
 $(document).ready(function() {
-    // Check authentication
-    checkAuth();
+    // Wait for layout to load before initializing
+    waitForLayout().then(function() {
+        initializeDashboard();
+    });
+});
+
+/**
+ * Wait for layout to be loaded
+ */
+function waitForLayout() {
+    return new Promise(function(resolve) {
+        if (window.layoutLoaded && window.currentUser) {
+            resolve();
+        } else {
+            // Poll every 100ms until layout is loaded
+            var checkInterval = setInterval(function() {
+                if (window.layoutLoaded && window.currentUser) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
+        }
+    });
+}
+
+/**
+ * Initialize dashboard after layout is ready
+ */
+function initializeDashboard() {
+    // Update doctor name
+    if (window.currentUser) {
+        const name = window.currentUser.last_name 
+            ? 'Dr. ' + window.currentUser.last_name 
+            : window.currentUser.username;
+        $('#doctorName').text(name);
+    }
     
     // Load dashboard data
     loadDashboardStats();
     loadUpcomingAppointments();
-    
-    /**
-     * Check if user is authenticated and is a doctor
-     */
-    function checkAuth() {
-        $.ajax({
-            url: '../ajax/check_session.php',
-            method: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                if (!response.success || response.user_type !== 'doctor') {
-                    window.location.href = '../login-new.html';
-                } else {
-                    $('#doctorName').text('Dr. ' + response.last_name);
-                }
-            },
-            error: function() {
-                window.location.href = '../login-new.html';
+}
+
+/**
+ * Load dashboard statistics
+ */
+function loadDashboardStats() {
+    $.ajax({
+        url: '../ajax/get_doctor_statistics.php',
+        method: 'GET',
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                $('#todayAppointments').text(response.data.today_appointments || 0);
+                $('#totalPatients').text(response.data.total_patients || 0);
+                $('#pendingActions').text(response.data.pending_actions || 0);
             }
-        });
-    }
-    
-    /**
-     * Load dashboard statistics
-     */
-    function loadDashboardStats() {
-        $.ajax({
-            url: '../ajax/get_doctor_statistics.php',
-            method: 'GET',
-            dataType: 'json',
-            success: function(response) {
-                if (response.success) {
-                    $('#todayAppointments').text(response.data.today_appointments || 0);
-                    $('#totalPatients').text(response.data.total_patients || 0);
-                    $('#pendingActions').text(response.data.pending_actions || 0);
-                }
-            },
-            error: function() {
-                console.error('Failed to load dashboard statistics');
-            }
-        });
-    }
-    
-    /**
-     * Load upcoming appointments
-     */
-    function loadUpcomingAppointments() {
-        $.ajax({
-            url: '../ajax/get_doctor_appointments.php',
-            method: 'GET',
-            data: { limit: 5, upcoming: true },
-            dataType: 'json',
-            success: function(response) {
-                if (response.success && response.data.length > 0) {
-                    displayUpcomingAppointments(response.data);
-                } else {
-                    showNoAppointments();
-                }
-            },
-            error: function() {
+        },
+        error: function() {
+            console.error('Failed to load dashboard statistics');
+        }
+    });
+}
+
+/**
+ * Load upcoming appointments
+ */
+function loadUpcomingAppointments() {
+    $.ajax({
+        url: '../ajax/get_doctor_appointments.php',
+        method: 'GET',
+        data: { limit: 5, upcoming: true },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success && response.data.length > 0) {
+                displayUpcomingAppointments(response.data);
+            } else {
                 showNoAppointments();
             }
-        });
-    }
-    
-    /**
-     * Display upcoming appointments in table
-     */
-    function displayUpcomingAppointments(appointments) {
+        },
+        error: function() {
+            showNoAppointments();
+        }
+    });
+}
+
+/**
+ * Display upcoming appointments in table
+ */
+function displayUpcomingAppointments(appointments) {
         let html = `
             <div class="table-responsive">
                 <table class="table table-hover">
@@ -131,59 +145,59 @@ $(document).ready(function() {
             </div>
         `;
         
-        $('#upcomingAppointmentsContainer').html(html);
-    }
-    
-    /**
-     * Show no appointments message
-     */
-    function showNoAppointments() {
-        $('#upcomingAppointmentsContainer').html(`
-            <div class="text-center py-4">
-                <i class="bx bx-calendar-x display-4 text-muted"></i>
-                <p class="text-muted mt-2">No upcoming appointments</p>
-            </div>
-        `);
-    }
-    
-    /**
-     * Format date
-     */
-    function formatDate(dateString) {
-        const date = new Date(dateString);
-        const options = { month: 'short', day: 'numeric', year: 'numeric' };
-        return date.toLocaleDateString('en-US', options);
-    }
-    
-    /**
-     * Format time
-     */
-    function formatTime(timeString) {
-        const [hours, minutes] = timeString.split(':');
-        const hour = parseInt(hours);
-        const ampm = hour >= 12 ? 'PM' : 'AM';
-        const hour12 = hour % 12 || 12;
-        return `${hour12}:${minutes} ${ampm}`;
-    }
-    
-    /**
-     * Capitalize first letter
-     */
-    function capitalize(str) {
-        return str.charAt(0).toUpperCase() + str.slice(1).replace(/_/g, ' ');
-    }
-    
-    /**
-     * Escape HTML
-     */
-    function escapeHtml(text) {
-        const map = {
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#039;'
-        };
-        return String(text).replace(/[&<>"']/g, m => map[m]);
-    }
-});
+    $('#upcomingAppointmentsContainer').html(html);
+}
+
+/**
+ * Show no appointments message
+ */
+function showNoAppointments() {
+    $('#upcomingAppointmentsContainer').html(`
+        <div class="text-center py-4">
+            <i class="bx bx-calendar-x display-4 text-muted"></i>
+            <p class="text-muted mt-2">No upcoming appointments</p>
+        </div>
+    `);
+}
+
+/**
+ * Format date
+ */
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    const options = { month: 'short', day: 'numeric', year: 'numeric' };
+    return date.toLocaleDateString('en-US', options);
+}
+
+/**
+ * Format time
+ */
+function formatTime(timeString) {
+    const [hours, minutes] = timeString.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+}
+
+/**
+ * Capitalize first letter
+ */
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1).replace(/_/g, ' ');
+}
+
+/**
+ * Escape HTML
+ */
+function escapeHtml(text) {
+    const map = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
