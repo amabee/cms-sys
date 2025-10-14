@@ -15,12 +15,14 @@ try {
     $status = isset($_GET['status']) ? trim($_GET['status']) : '';
     
     $query = "SELECT a.id, a.appointment_date, a.appointment_time, a.status,
-                     CONCAT(p.first_name, ' ', p.last_name) as patient_name,
-                     CONCAT(d.first_name, ' ', d.last_name) as doctor_name
-              FROM appointments a
-              LEFT JOIN patients p ON a.patient_id = p.id
-              LEFT JOIN doctors d ON a.doctor_id = d.id
-              WHERE a.deleted_at IS NULL";
+            CONCAT(p.first_name, ' ', p.last_name) as patient_name,
+            CONCAT(u.first_name, ' ', u.last_name) as doctor_name,
+            d.consultation_fee as doctor_fee
+        FROM appointments a
+        LEFT JOIN patients p ON a.patient_id = p.id
+        LEFT JOIN doctors d ON a.doctor_id = d.id
+        LEFT JOIN users u ON d.user_id = u.id
+        WHERE 1=1";
     
     $params = [];
     

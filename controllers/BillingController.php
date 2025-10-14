@@ -215,9 +215,14 @@ class BillingController {
             $stmt->bindValue(':balance_amount', $balance_amount);
             $stmt->bindValue(':payment_status', $payment_status);
             $stmt->bindValue(':payment_method', $data['payment_method'] ?? 'cash');
-            $stmt->bindValue(':bill_date', $data['bill_date']);
-            $stmt->bindValue(':due_date', $data['due_date'] ?? null);
-            $stmt->bindValue(':payment_date', ($payment_status === 'paid') ? date('Y-m-d') : null);
+            // Normalize date inputs: convert empty strings to null
+            $bill_date = isset($data['bill_date']) && $data['bill_date'] !== '' ? $data['bill_date'] : null;
+            $due_date = isset($data['due_date']) && $data['due_date'] !== '' ? $data['due_date'] : null;
+            $payment_date = ($payment_status === 'paid') ? date('Y-m-d') : (isset($data['payment_date']) && $data['payment_date'] !== '' ? $data['payment_date'] : null);
+
+            $stmt->bindValue(':bill_date', $bill_date);
+            $stmt->bindValue(':due_date', $due_date);
+            $stmt->bindValue(':payment_date', $payment_date);
             $stmt->bindValue(':created_by', $user_id, PDO::PARAM_INT);
             
             $stmt->execute();

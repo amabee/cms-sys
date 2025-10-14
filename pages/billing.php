@@ -152,8 +152,8 @@ ob_start();
 
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label for="billing_date" class="form-label">Billing Date <span class="text-danger">*</span></label>
-              <input type="date" class="form-control" id="billing_date" name="billing_date" required>
+                            <label for="billing_date" class="form-label">Billing Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="billing_date" name="bill_date" required>
             </div>
             <div class="col-md-6 mb-3">
               <label for="due_date" class="form-label">Due Date</label>
@@ -280,8 +280,8 @@ ob_start();
 
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label for="edit_billing_date" class="form-label">Billing Date <span class="text-danger">*</span></label>
-              <input type="date" class="form-control" id="edit_billing_date" name="billing_date" required>
+                            <label for="edit_billing_date" class="form-label">Billing Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="edit_billing_date" name="bill_date" required>
             </div>
             <div class="col-md-6 mb-3">
               <label for="edit_due_date" class="form-label">Due Date</label>
@@ -468,6 +468,23 @@ ob_start();
         $(appointmentSelect).html('<option value="">No Associated Appointment</option>');
       }
     });
+
+    // When appointment is selected, auto-fill consultation fee from option data attribute
+    $(document).on('change', '#appointment_id', function () {
+      const fee = $(this).find('option:selected').data('doctor-fee');
+      if (fee !== undefined) {
+        $('#consultation_fee').val(parseFloat(fee).toFixed(2));
+        calculateTotal('#newBillForm');
+      }
+    });
+
+    $(document).on('change', '#edit_appointment_id', function () {
+      const fee = $(this).find('option:selected').data('doctor-fee');
+      if (fee !== undefined) {
+        $('#edit_consultation_fee').val(parseFloat(fee).toFixed(2));
+        calculateTotal('#editBillForm');
+      }
+    });
   });
 
   function initializeBillingTable() {
@@ -485,8 +502,8 @@ ob_start();
         { data: 'bill_id', name: 'bill_id' },
         { data: 'patient_name', name: 'patient_name', orderable: false },
         {
-          data: 'billing_date',
-          name: 'billing_date',
+          data: 'bill_date',
+          name: 'bill_date',
           render: function (data) {
             return new Date(data).toLocaleDateString();
           }
@@ -621,7 +638,8 @@ ob_start();
           response.data.forEach(function (appointment) {
             const date = new Date(appointment.appointment_date).toLocaleDateString();
             const doctorInfo = appointment.doctor_name ? ` - Dr. ${appointment.doctor_name}` : '';
-            options += `<option value="${appointment.id}">${date} ${appointment.appointment_time}${doctorInfo}</option>`;
+            const feeAttr = appointment.doctor_fee ? ` data-doctor-fee="${appointment.doctor_fee}"` : '';
+            options += `<option value="${appointment.id}"${feeAttr}>${date} ${appointment.appointment_time}${doctorInfo}</option>`;
           });
           $(appointmentSelect).html(options);
         }
@@ -650,6 +668,19 @@ ob_start();
 
     const formData = new FormData(this);
     const data = Object.fromEntries(formData.entries());
+    
+    // Client-side validation for required fields
+    if (!data.patient_id || data.patient_id === '') {
+      showAlert('error', 'Please select a patient');
+      return;
+    }
+    if (!data.bill_date || data.bill_date === '') {
+      showAlert('error', 'Please enter a billing date');
+      return;
+    }
+
+    // Debug: log payload
+    console.log('Creating billing with payload:', data);
 
     $.ajax({
       url: '../ajax/create_billing.php',
@@ -678,6 +709,19 @@ ob_start();
 
     const formData = new FormData(this);
     const data = Object.fromEntries(formData.entries());
+
+    // Client-side validation for required fields
+    if (!data.patient_id || data.patient_id === '') {
+      showAlert('error', 'Please select a patient');
+      return;
+    }
+    if (!data.bill_date || data.bill_date === '') {
+      showAlert('error', 'Please enter a billing date');
+      return;
+    }
+
+    // Debug: log payload
+    console.log('Updating billing with payload:', data);
 
     $.ajax({
       url: '../ajax/update_billing.php',
@@ -720,7 +764,7 @@ ob_start();
             $('#edit_patient_id').val(bill.patient_id);
           }
           $('#edit_appointment_id').val(bill.appointment_id || '');
-          $('#edit_billing_date').val(bill.billing_date);
+          $('#edit_billing_date').val(bill.bill_date);
           $('#edit_due_date').val(bill.due_date || '');
           $('#edit_consultation_fee').val(bill.consultation_fee || 0);
           $('#edit_lab_charges').val(bill.lab_charges || 0);
@@ -782,6 +826,9 @@ ob_start();
       showConfirmButton: false,
       timer: 3000,
       timerProgressBar: true,
+      customClass: {
+        popup: 'swal-toast-z9999'
+      },
       didOpen: (toast) => {
         toast.addEventListener('mouseenter', Swal.stopTimer)
         toast.addEventListener('mouseleave', Swal.resumeTimer)
@@ -793,6 +840,13 @@ ob_start();
       title: message
     });
   }
+
+  // Add CSS for z-index
+  $(function() {
+    if (!$('.swal-toast-z9999').length) {
+      $('<style>.swal-toast-z9999 { z-index: 9999 !important; }</style>').appendTo('head');
+    }
+  });
 </script>
 
 <?php

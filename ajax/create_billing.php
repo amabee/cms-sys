@@ -31,7 +31,13 @@ try {
     $result = $controller->create($data);
     
     if ($result['success']) {
-        echo json_encode(['success' => true, 'message' => 'Billing record created successfully', 'billing_id' => $result['billing_id']]);
+        // Controller may return different keys for the created id/bill_id
+        $billingId = null;
+        if (isset($result['billing_id'])) $billingId = $result['billing_id'];
+        elseif (isset($result['bill_id'])) $billingId = $result['bill_id'];
+        elseif (isset($result['id'])) $billingId = $result['id'];
+
+        echo json_encode(['success' => true, 'message' => 'Billing record created successfully', 'billing_id' => $billingId]);
     } else {
         echo json_encode(['success' => false, 'message' => $result['message']]);
     }
