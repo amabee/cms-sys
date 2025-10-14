@@ -15,6 +15,11 @@ $(document).ready(function() {
         console.log('Layout loaded successfully');
         window.layoutLoaded = true;
         
+        // Manually attach toggle button click handler
+        setTimeout(function() {
+            attachToggleHandler();
+        }, 200);
+        
         // Trigger a custom event that main.js can listen to
         window.dispatchEvent(new Event('layoutReady'));
     }).catch(function(error) {
@@ -41,6 +46,9 @@ function loadLayoutComponents() {
                     // Mark as loaded and resolve
                     window.layoutLoaded = true;
                     window.currentUser = response;
+                    
+                    // Start the datetime clock
+                    startDateTimeClock();
                     
                     // Small delay to ensure DOM is updated
                     setTimeout(function() {
@@ -85,13 +93,18 @@ function loadNavbar(userInfo) {
         : userInfo.username;
     
     const navbarHtml = `
-        <div class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0 d-xl-none">
-            <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0)">
+        <div class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0">
+            <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0)" id="layout-menu-toggler">
                 <i class="bx bx-menu bx-sm"></i>
             </a>
         </div>
 
         <div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
+            <!-- Date and Time -->
+            <div class="navbar-nav flex-row align-items-center me-3">
+                <span class="text-muted fw-bold" id="current-datetime"></span>
+            </div>
+            
             <ul class="navbar-nav flex-row align-items-center ms-auto">
                 <!-- User -->
                 <li class="nav-item navbar-dropdown dropdown-user dropdown">
@@ -376,4 +389,77 @@ function escapeHtml(text) {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+}
+
+/**
+ * Update date and time in navbar
+ */
+function updateDateTime() {
+    const now = new Date();
+    const options = { 
+        weekday: 'short', 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+    };
+    const dateTimeString = now.toLocaleDateString('en-US', options);
+    $('#current-datetime').text(dateTimeString);
+}
+
+/**
+ * Start datetime clock
+ */
+function startDateTimeClock() {
+    updateDateTime();
+    setInterval(updateDateTime, 1000); // Update every second
+}
+
+/**
+ * Manually attach toggle button click handler
+ * This is a backup in case main.js doesn't attach it properly
+ */
+function attachToggleHandler() {
+    console.log('Attaching toggle button handler...');
+    
+    // Find only the anchor tag inside the toggle div
+    const toggleButton = document.querySelector('#layout-menu-toggler');
+    
+    if (!toggleButton) {
+        console.warn('Toggle button not found!');
+        return;
+    }
+    
+    console.log('Found toggle button:', toggleButton);
+    
+    // Make sure parent div is visible
+    const parentDiv = toggleButton.closest('.layout-menu-toggle');
+    if (parentDiv) {
+        parentDiv.style.display = 'flex';
+        parentDiv.style.visibility = 'visible';
+        parentDiv.style.opacity = '1';
+    }
+    
+    // Add click handler directly (don't clone/replace)
+    toggleButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Toggle button clicked!');
+        
+        if (typeof window.Helpers !== 'undefined' && window.Helpers.toggleCollapsed) {
+            window.Helpers.toggleCollapsed();
+        } else {
+            console.error('Helpers.toggleCollapsed not available');
+            // Fallback: manually toggle classes
+            const html = document.documentElement;
+            if (html.classList.contains('layout-menu-expanded')) {
+                html.classList.remove('layout-menu-expanded');
+            } else {
+                html.classList.add('layout-menu-expanded');
+            }
+        }
+    });
+    
+    console.log('Toggle button handler attached successfully');
 }

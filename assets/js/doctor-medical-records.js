@@ -3,9 +3,35 @@ let currentPatientId = null;
 let currentAppointmentId = null;
 
 $(document).ready(function() {
-    // Check authentication
-    checkAuth();
-    
+    // Wait for layout to load before initializing
+    waitForLayout().then(function() {
+        initializeMedicalRecordsPage();
+    });
+});
+
+/**
+ * Wait for layout to be loaded
+ */
+function waitForLayout() {
+    return new Promise(function(resolve) {
+        if (window.layoutLoaded && window.currentUser) {
+            resolve();
+        } else {
+            // Poll every 100ms until layout is loaded
+            var checkInterval = setInterval(function() {
+                if (window.layoutLoaded && window.currentUser) {
+                    clearInterval(checkInterval);
+                    resolve();
+                }
+            }, 100);
+        }
+    });
+}
+
+/**
+ * Initialize medical records page
+ */
+function initializeMedicalRecordsPage() {
     // Get patient/appointment from URL
     const urlParams = new URLSearchParams(window.location.search);
     currentPatientId = urlParams.get('patient_id');
@@ -23,25 +49,37 @@ $(document).ready(function() {
         e.preventDefault();
         saveMedicalRecord();
     });
-});
+    
+    // Search records
+    $('#searchRecords').on('input', function() {
+        const searchTerm = $(this).val().toLowerCase();
+        filterRecords(searchTerm);
+    });
+}
 
 /**
- * Check authentication
+ * Filter medical records by search term
  */
-function checkAuth() {
-    $.ajax({
-        url: '../ajax/check_session.php',
-        type: 'GET',
-        dataType: 'json',
-        success: function(response) {
-            if (!response.success || response.user_type !== 'doctor') {
-                window.location.href = '../login-new.html';
+function filterRecords(searchTerm) {
+    let visibleCount = 0;
+    
+    if (!searchTerm) {
+        $('.accordion-item').show();
+        visibleCount = $('.accordion-item').length;
+    } else {
+        $('.accordion-item').each(function() {
+            const text = $(this).text().toLowerCase();
+            if (text.includes(searchTerm)) {
+                $(this).show();
+                visibleCount++;
+            } else {
+                $(this).hide();
             }
-        },
-        error: function() {
-            window.location.href = '../login-new.html';
-        }
-    });
+        });
+    }
+    
+    // Update badge count
+    $('#recordsCount').text(visibleCount);
 }
 
 /**
@@ -191,6 +229,16 @@ function displayMedicalRecords(records) {
                                 <button type="button" class="btn btn-sm btn-primary" onclick="viewPrescriptions(${record.id})">
                                     <i class="bx bx-receipt me-1"></i>View Prescriptions
                                 </button>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="editMedicalRecord(${record.id})">
+                                    <i class="bx bx-edit me-1"></i>Edit
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteMedicalRecord(${record.id})">
+                                    <i class="bx bx-trash me-1"></i>Delete
+                                </button>
+                                ${record.attachment_url ? `
+                                <a href="${escapeHtml(record.attachment_url)}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bx bx-download me-1"></i>Download Attachment
+                                </a>` : ''}
                             </div>
                         </div>
                     </div>
@@ -224,32 +272,42 @@ function showCreateRecordModal() {
  * Save medical record
  */
 function saveMedicalRecord() {
-    const formData = {
-        patient_id: currentPatientId,
-        appointment_id: currentAppointmentId,
-        chief_complaint: $('#chiefComplaint').val(),
-        diagnosis: $('#diagnosis').val(),
-        treatment_plan: $('#treatmentPlan').val(),
-        blood_pressure: $('#bloodPressure').val(),
-        heart_rate: $('#heartRate').val(),
-        temperature: $('#temperature').val(),
-        weight: $('#weight').val(),
-        notes: $('#notes').val()
-    };
-    
     const recordId = $('#recordId').val();
-    if (recordId) {
-        formData.record_id = recordId;
+    const url = recordId 
+        ? '../ajax/update_medical_record.php' 
+        : '../ajax/create_medical_record.php';
+    
+    // Create FormData to handle file upload
+    const formData = new FormData();
+    formData.append('patient_id', currentPatientId);
+    if (currentAppointmentId) formData.append('appointment_id', currentAppointmentId);
+    if (recordId) formData.append('record_id', recordId);
+    
+    formData.append('chief_complaint', $('#chiefComplaint').val());
+    formData.append('diagnosis', $('#diagnosis').val());
+    formData.append('treatment_plan', $('#treatmentPlan').val());
+    formData.append('blood_pressure', $('#bloodPressure').val());
+    formData.append('heart_rate', $('#heartRate').val());
+    formData.append('temperature', $('#temperature').val());
+    formData.append('weight', $('#weight').val());
+    formData.append('notes', $('#notes').val());
+    
+    // Handle file upload if present
+    const fileInput = document.getElementById('attachment');
+    if (fileInput && fileInput.files.length > 0) {
+        formData.append('attachment', fileInput.files[0]);
     }
     
     $.ajax({
-        url: '../ajax/create_medical_record.php',
+        url: url,
         type: 'POST',
         data: formData,
+        processData: false,
+        contentType: false,
         dataType: 'json',
         success: function(response) {
             if (response.success) {
-                alert('Medical record saved successfully');
+                alert(recordId ? 'Medical record updated successfully' : 'Medical record created successfully');
                 bootstrap.Modal.getInstance(document.getElementById('medicalRecordModal')).hide();
                 loadMedicalRecords();
             } else {
@@ -258,6 +316,69 @@ function saveMedicalRecord() {
         },
         error: function() {
             alert('Error saving medical record. Please try again.');
+        }
+    });
+}
+
+/**
+ * Edit medical record
+ */
+function editMedicalRecord(recordId) {
+    $.ajax({
+        url: '../ajax/get_medical_record.php',
+        type: 'GET',
+        data: { record_id: recordId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success && response.data) {
+                const record = response.data;
+                
+                $('#modalTitle').text('Edit Medical Record');
+                $('#recordId').val(record.id);
+                $('#chiefComplaint').val(record.chief_complaint);
+                $('#diagnosis').val(record.diagnosis);
+                $('#treatmentPlan').val(record.treatment_plan);
+                $('#bloodPressure').val(record.blood_pressure);
+                $('#heartRate').val(record.heart_rate);
+                $('#temperature').val(record.temperature);
+                $('#weight').val(record.weight);
+                $('#notes').val(record.notes);
+                
+                const modal = new bootstrap.Modal(document.getElementById('medicalRecordModal'));
+                modal.show();
+            } else {
+                alert('Failed to load medical record details');
+            }
+        },
+        error: function() {
+            alert('Error loading medical record');
+        }
+    });
+}
+
+/**
+ * Delete medical record
+ */
+function deleteMedicalRecord(recordId) {
+    if (!confirm('Are you sure you want to delete this medical record? This action cannot be undone.')) {
+        return;
+    }
+    
+    $.ajax({
+        url: '../ajax/delete_medical_record.php',
+        type: 'POST',
+        data: { record_id: recordId },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                alert('Medical record deleted successfully');
+                loadMedicalRecords();
+            } else {
+                alert(response.message || 'Failed to delete medical record');
+            }
+        },
+        error: function() {
+            alert('Error deleting medical record');
         }
     });
 }
