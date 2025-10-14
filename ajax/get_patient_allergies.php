@@ -2,6 +2,7 @@
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../shared/session_handler.php';
 require_once __DIR__ . '/../shared/config.php';
+require_once __DIR__ . '/../controllers/SystemLogger.php';
 require_once __DIR__ . '/../controllers/PrescriptionController.php';
 
 if (!isset($user_id)) {

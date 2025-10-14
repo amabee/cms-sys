@@ -87,50 +87,9 @@ ob_start();
                 <button type="button" class="btn btn-primary btn-sm" id="newLabTestBtn">
                   <i class="fas fa-plus"></i> New Lab Test
                 </button>
-                <button type="button" class="btn btn-secondary btn-sm" id="searchLabTestsBtn">
-                  <i class="fas fa-search"></i> Advanced Search
-                </button>
-
               </div>
             </div>
             <div class="card-body">
-              <!-- Advanced Filters (Initially Hidden) -->
-              <div class="row mb-3" id="labTestFilters" style="display: none;">
-                <div class="col-md-3">
-                  <div class="form-group">
-                    <label for="statusFilter">Status</label>
-                    <select class="form-control" id="statusFilter">
-                      <option value="">All Status</option>
-                      <option value="ordered">Ordered</option>
-                      <option value="sample_collected">Sample Collected</option>
-                      <option value="in_progress">In Progress</option>
-                      <option value="completed">Completed</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="form-group">
-                    <label for="categoryFilter">Category</label>
-                    <select class="form-control" id="categoryFilter">
-                      <option value="">All Categories</option>
-                    </select>
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="form-group">
-                    <label for="dateFromFilter">Date From</label>
-                    <input type="date" class="form-control" id="dateFromFilter">
-                  </div>
-                </div>
-                <div class="col-md-3">
-                  <div class="form-group">
-                    <label for="dateToFilter">Date To</label>
-                    <input type="date" class="form-control" id="dateToFilter">
-                  </div>
-                </div>
-              </div>
-
               <!-- Quick Search -->
               <div class="row mb-3">
                 <div class="col-md-12">
@@ -162,13 +121,12 @@ ob_start();
                       <th>Date Ordered</th>
                       <th>Status</th>
                       <th>Doctor</th>
-                      <th>Priority</th>
                       <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody id="labTestsTableBody">
                     <tr>
-                      <td colspan="9" class="text-center">
+                      <td colspan="8" class="text-center">
                         <i class="fas fa-spinner fa-spin"></i> Loading lab tests...
                       </td>
                     </tr>
@@ -269,18 +227,20 @@ ob_start();
               </div>
               <div class="col-md-4">
                 <div class="form-floating">
-                  <select class="form-select" id="prioritySelect" name="priority">
-                    <option value="normal">Normal</option>
-                    <option value="urgent">Urgent</option>
-                    <option value="stat">STAT</option>
-                  </select>
-                  <label for="prioritySelect">Priority</label>
+                  <input type="date" class="form-control" id="expectedDate" name="expected_date">
+                  <label for="expectedDate">Expected Results Date</label>
                 </div>
               </div>
               <div class="col-md-4">
                 <div class="form-floating">
-                  <input type="date" class="form-control" id="expectedDate" name="expected_date">
-                  <label for="expectedDate">Expected Results Date</label>
+                  <select class="form-select" id="statusSelect" name="status">
+                    <option value="ordered">Ordered</option>
+                    <option value="sample_collected">Sample Collected</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                  <label for="statusSelect">Status</label>
                 </div>
               </div>
             </div>
@@ -341,27 +301,26 @@ ob_start();
 </div>
 
 <!-- Lab Test Details Modal -->
-<div class="modal fade" id="labTestDetailsModal" tabindex="-1" role="dialog" aria-labelledby="labTestDetailsLabel"
-  aria-hidden="true">
-  <div class="modal-dialog modal-xl" role="document">
+<div class="modal fade" id="labTestDetailsModal" tabindex="-1" aria-labelledby="labTestDetailsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-xl">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title">Lab Test Details</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-          <span aria-hidden="true">&times;</span>
-        </button>
+        <h5 class="modal-title" id="labTestDetailsLabel">Lab Test Details</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body" id="labTestDetailsContent">
         <!-- Lab test details will be loaded here -->
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-        <button type="button" class="btn btn-info" id="printLabTestBtn">
-          <i class="fas fa-print"></i> Print
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+          <i class="bx bx-x me-1"></i>Close
         </button>
-        <button type="button" class="btn btn-success" id="downloadResultsBtn">
-          <i class="fas fa-download"></i> Download Results
+        <!-- <button type="button" class="btn btn-outline-info" id="printLabTestBtn">
+          <i class="bx bx-printer me-1"></i>Print
         </button>
+        <button type="button" class="btn btn-outline-success" id="downloadResultsBtn">
+          <i class="bx bx-download me-1"></i>Download Results
+        </button> -->
       </div>
     </div>
   </div>
@@ -454,14 +413,16 @@ ob_start();
         type: 'GET',
         error: function(xhr, error, code) {
           console.error('DataTable AJAX error:', error, code);
+          console.error('Response:', xhr.responseText);
+          console.error('Status:', xhr.status);
         }
       },
       columns: [
         { data: 'test_id' },
         { 
-          data: null,
+          data: 'patient_name',
           render: function(data) {
-            return `${data.patient_first_name || ''} ${data.patient_last_name || ''}`;
+            return data || '-';
           }
         },
         { data: 'test_name' },
@@ -477,11 +438,18 @@ ob_start();
           render: function(data) {
             const badges = {
               'ordered': 'badge bg-warning',
+              'sample_collected': 'badge bg-info',
               'in_progress': 'badge bg-info',
               'completed': 'badge bg-success',
               'cancelled': 'badge bg-danger'
             };
             return `<span class="${badges[data] || 'badge bg-secondary'}">${data || 'N/A'}</span>`;
+          }
+        },
+        { 
+          data: 'doctor_name',
+          render: function(data) {
+            return data || '-';
           }
         },
         {
@@ -544,18 +512,18 @@ ob_start();
 
     // Buttons in header
     $('#newLabTestBtn').on('click', function () {
-      try { document.getElementById('labTestForm').reset(); } catch (e) { }
+      try { 
+        document.getElementById('labTestForm').reset();
+        // Remove hidden id field if exists
+        $('#labTestForm input[name="id"]').remove();
+      } catch (e) { }
       $('#labTestModalTitle').text('New Lab Test');
       // Set sensible defaults
       const today = new Date().toISOString().split('T')[0];
       $('#testDate').val(today);
-      $('#prioritySelect').val('normal');
+      $('#statusSelect').val('ordered');
       $('#labTestModal').modal('show');
       setTimeout(() => $('#patientSelect').focus(), 200);
-    });
-
-    $('#searchLabTestsBtn').on('click', function () {
-      $('#labTestFilters').slideToggle(150);
     });
 
     // Save lab test
@@ -569,6 +537,7 @@ ob_start();
       }
 
       const formData = new FormData(form);
+      const isEdit = formData.has('id') && formData.get('id');
       
       // Show loading state
       const btn = $(this);
@@ -576,7 +545,7 @@ ob_start();
       btn.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>Saving...');
 
       $.ajax({
-        url: '../ajax/create_lab_test.php',
+        url: isEdit ? '../ajax/update_lab_test.php' : '../ajax/create_lab_test.php',
         method: 'POST',
         data: formData,
         processData: false,
@@ -593,8 +562,8 @@ ob_start();
             // Show success message
             Swal.fire({
               icon: 'success',
-              title: 'Lab Test Created',
-              text: 'Lab test has been successfully created.',
+              title: isEdit ? 'Lab Test Updated' : 'Lab Test Created',
+              text: `Lab test has been successfully ${isEdit ? 'updated' : 'created'}.`,
               timer: 2000,
               showConfirmButton: false
             });
@@ -602,7 +571,7 @@ ob_start();
             Swal.fire({
               icon: 'error',
               title: 'Failed',
-              text: response.message || 'Failed to create lab test'
+              text: response.message || `Failed to ${isEdit ? 'update' : 'create'} lab test`
             });
           }
         },
@@ -613,6 +582,260 @@ ob_start();
             icon: 'error',
             title: 'Error',
             text: 'Connection error. Please try again.'
+          });
+        }
+      });
+    });
+
+    // View Lab Test Details
+    $(document).on('click', '.view-lab-test', function() {
+      const testId = $(this).data('id');
+      
+      // Show loading
+      $('#labTestDetailsContent').html('<div class="text-center py-4"><i class="fas fa-spinner fa-spin fa-2x text-primary"></i><p class="mt-2">Loading test details...</p></div>');
+      $('#labTestDetailsModal').modal('show');
+      
+      // Fetch lab test details
+      $.ajax({
+        url: '../ajax/get_lab_test.php',
+        method: 'GET',
+        data: { id: testId },
+        success: function(response) {
+          if (response.success && response.data) {
+            const test = response.data;
+            
+            // Format status badge
+            const statusBadges = {
+              'ordered': 'warning',
+              'sample_collected': 'info',
+              'in_progress': 'info',
+              'completed': 'success',
+              'cancelled': 'danger'
+            };
+            const statusClass = statusBadges[test.status] || 'secondary';
+            
+            const html = `
+              <div class="card mb-3">
+                <div class="card-header bg-light">
+                  <h6 class="mb-0"><i class="bx bx-test-tube me-2"></i>Test Information</h6>
+                </div>
+                <div class="card-body">
+                  <div class="row">
+                    <div class="col-md-6">
+                      <table class="table table-sm table-borderless">
+                        <tr>
+                          <th width="40%">Test ID:</th>
+                          <td><strong>${test.test_id || '-'}</strong></td>
+                        </tr>
+                        <tr>
+                          <th>Test Name:</th>
+                          <td>${test.test_name || '-'}</td>
+                        </tr>
+                        <tr>
+                          <th>Category:</th>
+                          <td>${test.test_category || '-'}</td>
+                        </tr>
+                        <tr>
+                          <th>Test Date:</th>
+                          <td>${test.test_date ? new Date(test.test_date).toLocaleDateString() : '-'}</td>
+                        </tr>
+                        <tr>
+                          <th>Status:</th>
+                          <td><span class="badge bg-${statusClass}">${test.status || '-'}</span></td>
+                        </tr>
+                      </table>
+                    </div>
+                    <div class="col-md-6">
+                      <table class="table table-sm table-borderless">
+                        <tr>
+                          <th width="40%">Patient:</th>
+                          <td>${test.patient_name || '-'}</td>
+                        </tr>
+                        <tr>
+                          <th>Patient ID:</th>
+                          <td>${test.patient_code || '-'}</td>
+                        </tr>
+                        <tr>
+                          <th>Ordering Doctor:</th>
+                          <td>${test.doctor_name || '-'}</td>
+                        </tr>
+                        <tr>
+                          <th>Fasting Required:</th>
+                          <td>${test.fasting_required === 'yes' ? '<span class="badge bg-warning">Yes</span>' : '<span class="badge bg-secondary">No</span>'}</td>
+                        </tr>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              ${test.notes ? `
+                <div class="card mb-3">
+                  <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bx bx-note me-2"></i>Clinical Notes</h6>
+                  </div>
+                  <div class="card-body mt-5">
+                    <p class="mb-0">${test.notes.replace(/\n/g, '<br>')}</p>
+                  </div>
+                </div>
+              ` : ''}
+              
+              ${test.results || test.lab_technician || test.recorded_at ? `
+                <div class="card mb-3">
+                  <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="bx bx-check-circle me-2"></i>Lab Results</h6>
+                  </div>
+                  <div class="card-body mt-5">
+                    ${test.results ? `
+                      <div class="mb-3">
+                        <strong>Results:</strong>
+                        <p class="mt-2">${test.results.replace(/\n/g, '<br>')}</p>
+                      </div>
+                    ` : '<p class="text-muted">No results recorded yet.</p>'}
+                    ${test.normal_range ? `
+                      <div class="mb-3">
+                        <strong>Normal Range:</strong>
+                        <p class="mt-2">${test.normal_range}</p>
+                      </div>
+                    ` : ''}
+                    ${test.lab_technician ? `<p><strong>Lab Technician:</strong> ${test.lab_technician}</p>` : ''}
+                    ${test.recorded_at ? `<p><strong>Recorded At:</strong> ${new Date(test.recorded_at).toLocaleString()}</p>` : ''}
+                    ${test.recorded_by_name ? `<p><strong>Recorded By:</strong> ${test.recorded_by_name}</p>` : ''}
+                    ${test.report_file ? `
+                      <p><strong>Report:</strong> <a href="../${test.report_file}" target="_blank" class="btn btn-sm btn-outline-success"><i class="bx bx-download me-1"></i>Download Report</a></p>
+                    ` : ''}
+                  </div>
+                </div>
+              ` : ''}
+              
+              <div class="row">
+                <div class="col-md-6">
+                  <small class="text-muted">Created: ${test.created_at ? new Date(test.created_at).toLocaleString() : '-'}</small>
+                </div>
+                <div class="col-md-6 text-end">
+                  <small class="text-muted">Last Updated: ${test.updated_at ? new Date(test.updated_at).toLocaleString() : '-'}</small>
+                </div>
+              </div>
+            `;
+            $('#labTestDetailsContent').html(html);
+          } else {
+            $('#labTestDetailsContent').html('<div class="alert alert-danger"><i class="bx bx-error me-2"></i>Failed to load lab test details</div>');
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('View lab test error:', error);
+          console.error('Response:', xhr.responseText);
+          $('#labTestDetailsContent').html('<div class="alert alert-danger"><i class="bx bx-error me-2"></i>Error loading lab test details. Please try again.</div>');
+        }
+      });
+    });
+
+    // Edit Lab Test
+    $(document).on('click', '.edit-lab-test', function() {
+      const testId = $(this).data('id');
+      
+      // Fetch lab test details
+      $.ajax({
+        url: '../ajax/get_lab_test.php',
+        method: 'GET',
+        data: { id: testId },
+        success: function(response) {
+          if (response.success && response.data) {
+            const test = response.data;
+            
+            // Reset form first
+            document.getElementById('labTestForm').reset();
+            
+            // Add hidden id field
+            $('#labTestForm input[name="id"]').remove();
+            $('#labTestForm').append(`<input type="hidden" name="id" value="${test.id}">`);
+            
+            // Populate form fields with correct IDs
+            $('#patientSelect').val(test.patient_id);
+            $('#doctorSelect').val(test.doctor_id || '');
+            $('#testCategoryInput').val(test.test_category || '');
+            $('#testNameInput').val(test.test_name || '');
+            $('#testDate').val(test.test_date || '');
+            $('#expectedDate').val(test.expected_date || '');
+            $('#statusSelect').val(test.status || 'ordered');
+            $('#specimenType').val(test.specimen_type || 'blood');
+            $('#fastingRequired').val(test.fasting_required || 'no');
+            $('#clinicalNotes').val(test.notes || '');
+            
+            $('#labTestModalTitle').text('Edit Lab Test');
+            $('#labTestModal').modal('show');
+          } else {
+            Swal.fire({
+              icon: 'error',
+              title: 'Failed',
+              text: 'Failed to load lab test details'
+            });
+          }
+        },
+        error: function(xhr, status, error) {
+          console.error('Edit lab test error:', error);
+          console.error('Response:', xhr.responseText);
+          Swal.fire({
+            icon: 'error',
+            title: 'Error',
+            text: 'Failed to load lab test details'
+          });
+        }
+      });
+    });
+
+    // Delete Lab Test
+    $(document).on('click', '.delete-lab-test', function() {
+      const testId = $(this).data('id');
+      
+      Swal.fire({
+        title: 'Are you sure?',
+        text: "You won't be able to revert this!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes, delete it!'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          // Show loading
+          Swal.fire({
+            title: 'Deleting...',
+            allowOutsideClick: false,
+            didOpen: () => {
+              Swal.showLoading();
+            }
+          });
+          
+          $.ajax({
+            url: '../ajax/delete_lab_test.php',
+            method: 'POST',
+            data: { id: testId },
+            success: function(response) {
+              if (response.success) {
+                labTestsTable.ajax.reload(null, false);
+                Swal.fire({
+                  icon: 'success',
+                  title: 'Deleted!',
+                  text: 'Lab test has been deleted.',
+                  timer: 2000,
+                  showConfirmButton: false
+                });
+              } else {
+                Swal.fire({
+                  icon: 'error',
+                  title: 'Failed',
+                  text: response.message || 'Failed to delete lab test'
+                });
+              }
+            },
+            error: function() {
+              Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Connection error. Please try again.'
+              });
+            }
           });
         }
       });

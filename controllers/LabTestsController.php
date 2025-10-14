@@ -34,11 +34,15 @@ class LabTestsController {
             $recordsFiltered = (int)$stmt->fetchColumn();
         } else $recordsFiltered = $total;
 
-        $sql = "SELECT lt.id, lt.test_id, lt.patient_id, CONCAT(p.first_name,' ',p.last_name) AS patient_name, lt.test_name, lt.test_category, lt.test_date, lt.status, 
+        $sql = "SELECT lt.id, lt.test_id, lt.patient_id, CONCAT(p.first_name,' ',p.last_name) AS patient_name, 
+                       lt.test_name, lt.test_category, lt.test_date, lt.status,
+                       CONCAT(u.first_name,' ',u.last_name) AS doctor_name,
                        CASE WHEN lr.id IS NOT NULL THEN 1 ELSE 0 END AS has_results,
                        lr.report_file AS latest_report_file
                 FROM lab_tests lt 
                 LEFT JOIN patients p ON lt.patient_id = p.id 
+                LEFT JOIN doctors d ON lt.doctor_id = d.id
+                LEFT JOIN users u ON d.user_id = u.id
                 LEFT JOIN (
                     SELECT lab_test_id, id, report_file, 
                            ROW_NUMBER() OVER (PARTITION BY lab_test_id ORDER BY recorded_at DESC) as rn
@@ -63,6 +67,7 @@ class LabTestsController {
                 'test_category'=>$r['test_category'],
                 'test_date'=>$r['test_date'],
                 'status'=>$r['status'],
+                'doctor_name'=>$r['doctor_name'] ?? null,
                 'has_results'=>(int)$r['has_results'],
                 'latest_report_file'=>$r['latest_report_file']
             ];
@@ -323,7 +328,7 @@ class LabTestsController {
             $stats = [];
             
             // Total tests
-            $stmt = $this->db->prepare('SELECT COUNT(*) FROM lab_tests WHERE deleted_at IS NULL');
+            $stmt = $this->db->prepare('SELECT COUNT(*) FROM lab_tests');
             $stmt->execute();
             $stats['total_tests'] = (int)$stmt->fetchColumn();
             
@@ -331,7 +336,6 @@ class LabTestsController {
             $stmt = $this->db->prepare('
                 SELECT status, COUNT(*) as count 
                 FROM lab_tests 
-                WHERE deleted_at IS NULL 
                 GROUP BY status
             ');
             $stmt->execute();
@@ -354,7 +358,6 @@ class LabTestsController {
                 SELECT COUNT(*) 
                 FROM lab_tests 
                 WHERE test_date >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
-                AND deleted_at IS NULL
             ');
             $stmt->execute();
             $stats['recent_tests'] = (int)$stmt->fetchColumn();
@@ -365,7 +368,6 @@ class LabTestsController {
                 FROM lab_tests 
                 WHERE test_category IS NOT NULL 
                 AND test_category != ""
-                AND deleted_at IS NULL
                 GROUP BY test_category 
                 ORDER BY count DESC 
                 LIMIT 10
@@ -378,7 +380,6 @@ class LabTestsController {
                 SELECT COUNT(*) 
                 FROM lab_tests 
                 WHERE status IN ("ordered", "sample_collected", "in_progress")
-                AND deleted_at IS NULL
             ');
             $stmt->execute();
             $stats['pending_results'] = (int)$stmt->fetchColumn();
@@ -389,7 +390,6 @@ class LabTestsController {
                 FROM lab_tests 
                 WHERE status = "completed"
                 AND DATE(updated_at) = CURDATE()
-                AND deleted_at IS NULL
             ');
             $stmt->execute();
             $stats['completed_today'] = (int)$stmt->fetchColumn();
@@ -401,7 +401,6 @@ class LabTestsController {
                 WHERE status = "completed"
                 AND updated_at IS NOT NULL
                 AND test_date IS NOT NULL
-                AND deleted_at IS NULL
                 AND test_date >= DATE_SUB(CURDATE(), INTERVAL 90 DAY)
             ');
             $stmt->execute();
@@ -420,7 +419,6 @@ class LabTestsController {
                     lr.results LIKE "%high%" OR
                     lr.results LIKE "%low%"
                 )
-                AND lt.deleted_at IS NULL
                 AND lr.results IS NOT NULL
             ');
             $stmt->execute();
@@ -438,7 +436,7 @@ class LabTestsController {
         if (!$this->db) return ['success' => false, 'message' => 'Database unavailable'];
         
         try {
-            $where = ['lt.deleted_at IS NULL'];
+            $where = ['1=1'];
             $params = [];
             
             // Patient search
@@ -534,7 +532,6 @@ class LabTestsController {
                 FROM lab_tests 
                 WHERE test_category IS NOT NULL 
                 AND test_category != ""
-                AND deleted_at IS NULL
                 ORDER BY test_category ASC
             ');
             $stmt->execute();
