@@ -37,11 +37,18 @@ function initializeMedicalRecordsPage() {
     currentPatientId = urlParams.get('patient_id');
     currentAppointmentId = urlParams.get('appointment_id');
     
+    console.log('Initializing medical records page');
+    console.log('Patient ID:', currentPatientId);
+    console.log('Appointment ID:', currentAppointmentId);
+    
     if (currentPatientId) {
         loadPatientInfo();
         loadMedicalRecords();
     } else if (currentAppointmentId) {
         loadAppointmentAndPatient();
+    } else {
+        console.warn('No patient_id or appointment_id provided in URL');
+        showPatientError('Please select a patient from the appointments or patients page.');
     }
     
     // Form submit handler
@@ -109,17 +116,21 @@ function loadAppointmentAndPatient() {
  */
 function loadPatientInfo() {
     $.ajax({
-        url: '../ajax/get_patient_dashboard.php',
+        url: '../ajax/get_patient.php',
         type: 'GET',
-        data: { patient_id: currentPatientId },
+        data: { id: currentPatientId },
         dataType: 'json',
         success: function(response) {
             if (response.success && response.data) {
-                displayPatientInfo(response.data.patient_info);
+                displayPatientInfo(response.data);
+            } else {
+                console.error('Failed to load patient info:', response.message);
+                showPatientError('Unable to load patient information');
             }
         },
-        error: function() {
-            console.error('Failed to load patient info');
+        error: function(xhr, status, error) {
+            console.error('Failed to load patient info:', error);
+            showPatientError('Error loading patient information');
         }
     });
 }
@@ -155,13 +166,24 @@ function loadMedicalRecords() {
         data: { patient_id: currentPatientId },
         dataType: 'json',
         success: function(response) {
-            if (response.success && response.data) {
-                displayMedicalRecords(response.data);
+            console.log('Medical records response:', response);
+            
+            // Handle DataTables format
+            let records = [];
+            if (response.data && Array.isArray(response.data)) {
+                records = response.data;
+            } else if (response.success && response.data) {
+                records = response.data;
+            }
+            
+            if (records.length > 0) {
+                displayMedicalRecords(records);
             } else {
                 showNoRecords();
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error('Error loading medical records:', error);
             showErrorMessage();
         }
     });
@@ -407,11 +429,23 @@ function showNoRecords() {
 }
 
 /**
+ * Show patient error message
+ */
+function showPatientError(message) {
+    $('#patientInfoCard').html(`
+        <div class="alert alert-danger">
+            <i class="bx bx-error me-2"></i>
+            ${message}
+        </div>
+    `).show();
+}
+
+/**
  * Show error message
  */
 function showErrorMessage() {
     $('#recordsContainer').html(`
-        <div class="alert alert-danger" role="alert">
+        <div class="alert alert-danger text-center">
             <i class="bx bx-error me-2"></i>
             Failed to load medical records. Please try refreshing the page.
         </div>

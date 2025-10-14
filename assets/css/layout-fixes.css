@@ -1,0 +1,44 @@
+/**
+ * Layout fixes for toggle button visibility
+ * The Sneat template only shows the navbar toggle button for offcanvas layouts
+ * This CSS ensures the toggle button is always visible for all layout types
+ */
+
+/* Force toggle button to display in navbar for all layout types */
+.layout-navbar .layout-menu-toggle {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+}
+
+/* Ensure toggle button is properly styled */
+.layout-menu-toggle .nav-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Make sure the icon is visible */
+.layout-menu-toggle i {
+    font-size: 1.5rem;
+    color: inherit;
+}
+
+/* On mobile/tablet, always show toggle */
+@media (max-width: 1199px) {
+    .layout-navbar .layout-menu-toggle {
+        display: flex !important;
+    }
+}
+
+/* On desktop, show toggle for collapsed menu */
+@media (min-width: 1200px) {
+    .layout-navbar .layout-menu-toggle {
+        display: flex !important;
+    }
+    
+    /* Show toggle when menu is collapsed */
+    .layout-menu-collapsed .layout-navbar .layout-menu-toggle {
+        display: flex !important;
+    }
+}
