@@ -275,8 +275,6 @@ function loadAppointmentAndPatient() {
  * Load patient information
  */
 function loadPatientInfo() {
-    console.log('Loading patient info for ID:', currentPatientId);
-    
     if (!currentPatientId) {
         console.error('No patient ID selected');
         showPatientError('No patient selected');
