@@ -25,6 +25,9 @@ require_once '../controllers/NotificationsController.php';
 $controller = new NotificationsController();
 
 try {
+    // DEBUG: Log all POST data
+    error_log("DEBUG: Received POST data: " . json_encode($_POST));
+    
     // Validate required fields
     $required_fields = ['name', 'code', 'type', 'method', 'message_template'];
     foreach ($required_fields as $field) {
@@ -33,7 +36,7 @@ try {
             exit;
         }
     }
-    
+
     $data = [
         'name' => $_POST['name'],
         'code' => $_POST['code'],
@@ -42,8 +45,38 @@ try {
         'subject_template' => $_POST['subject_template'] ?? null,
         'message_template' => $_POST['message_template']
     ];
-    
-    $result = $controller->saveTemplate($data);
+
+    // If id is provided, perform an update instead to avoid duplicate key on code
+    if (!empty($_POST['id'])) {
+        $id = intval($_POST['id']);
+        error_log("DEBUG: Checking template code '{$data['code']}' excluding id {$id}");
+        // Ensure code uniqueness excluding this id
+        if ($controller->templateCodeExists($data['code'], $id)) {
+            $conflictId = $controller->getTemplateIdByCode($data['code'], $id);
+            error_log("DEBUG: Code conflict found! Conflict ID: {$conflictId}");
+            echo json_encode(['success' => false, 'message' => 'Template code already exists', 'conflict_id' => $conflictId, 'received_id' => $id]);
+            exit;
+        }
+        error_log("DEBUG: No code conflict, proceeding with update");
+        $result = $controller->updateTemplate($id, $data);
+        if ($result['success']) $result['received_id'] = $id;
+    } else {
+        // Before inserting, ensure template_code is unique
+        if ($controller->templateCodeExists($data['code'])) {
+            $conflictId = $controller->getTemplateIdByCode($data['code']);
+            $conflictTemplate = null;
+            if ($conflictId) {
+                $tRes = $controller->getTemplateById($conflictId);
+                if ($tRes['success']) $conflictTemplate = $tRes['template'];
+            }
+
+            echo json_encode(['success' => false, 'message' => 'Template code already exists', 'conflict_id' => $conflictId, 'conflict_template' => $conflictTemplate]);
+            exit;
+        }
+
+        $result = $controller->saveTemplate($data);
+        if ($result['success']) $result['received_id'] = $result['template_id'] ?? null;
+    }
     
     if ($result['success']) {
         echo json_encode([

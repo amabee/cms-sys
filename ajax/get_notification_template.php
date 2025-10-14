@@ -1,0 +1,28 @@
+<?php
+session_start();
+header('Content-Type: application/json');
+
+if (!isset($_SESSION['user_id'])) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized']);
+    exit;
+}
+
+require_once '../controllers/NotificationsController.php';
+$controller = new NotificationsController();
+
+try {
+    $id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+    if ($id <= 0) {
+        echo json_encode(['success' => false, 'message' => 'Invalid template id']);
+        exit;
+    }
+
+    $result = $controller->getTemplateById($id);
+    echo json_encode($result);
+} catch (Exception $e) {
+    error_log('Error in get_notification_template.php: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Failed to retrieve template']);
+}
+
+?>

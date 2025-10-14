@@ -84,20 +84,56 @@ class NotificationsController {
                 $params['patient_id'] = $patientId;
             }
             
-            // Apply filters
+            // Apply filters (support scalar values or arrays -> IN clause)
             if (isset($filters['type'])) {
-                $whereConditions[] = "n.type = :type";
-                $params['type'] = $filters['type'];
+                if (is_array($filters['type'])) {
+                    $placeholders = [];
+                    foreach ($filters['type'] as $i => $val) {
+                        $ph = "type_" . $i;
+                        $placeholders[] = ':' . $ph;
+                        $params[$ph] = $val;
+                    }
+                    if (!empty($placeholders)) {
+                        $whereConditions[] = 'n.type IN (' . implode(', ', $placeholders) . ')';
+                    }
+                } else {
+                    $whereConditions[] = "n.type = :type";
+                    $params['type'] = $filters['type'];
+                }
             }
-            
+
             if (isset($filters['status'])) {
-                $whereConditions[] = "n.status = :status";
-                $params['status'] = $filters['status'];
+                if (is_array($filters['status'])) {
+                    $placeholders = [];
+                    foreach ($filters['status'] as $i => $val) {
+                        $ph = "status_" . $i;
+                        $placeholders[] = ':' . $ph;
+                        $params[$ph] = $val;
+                    }
+                    if (!empty($placeholders)) {
+                        $whereConditions[] = 'n.status IN (' . implode(', ', $placeholders) . ')';
+                    }
+                } else {
+                    $whereConditions[] = "n.status = :status";
+                    $params['status'] = $filters['status'];
+                }
             }
-            
+
             if (isset($filters['priority'])) {
-                $whereConditions[] = "n.priority = :priority";
-                $params['priority'] = $filters['priority'];
+                if (is_array($filters['priority'])) {
+                    $placeholders = [];
+                    foreach ($filters['priority'] as $i => $val) {
+                        $ph = "priority_" . $i;
+                        $placeholders[] = ':' . $ph;
+                        $params[$ph] = $val;
+                    }
+                    if (!empty($placeholders)) {
+                        $whereConditions[] = 'n.priority IN (' . implode(', ', $placeholders) . ')';
+                    }
+                } else {
+                    $whereConditions[] = "n.priority = :priority";
+                    $params['priority'] = $filters['priority'];
+                }
             }
             
             if (isset($filters['unread_only']) && $filters['unread_only']) {
@@ -121,12 +157,40 @@ class NotificationsController {
                 LIMIT :limit OFFSET :offset
             ");
             
-            // Set pagination parameters
-            $params['limit'] = $filters['limit'] ?? 50;
-            $params['offset'] = $filters['offset'] ?? 0;
+            // Get total count for pagination FIRST (before adding limit/offset to params)
+            $countStmt = $this->pdo->prepare("
+                SELECT COUNT(*) as total
+                FROM notifications n
+                $whereClause
+            ");
             
-            $stmt->execute($params);
+            // Bind parameters for count query (without limit/offset)
+            foreach ($params as $key => $value) {
+                $countStmt->bindValue(':' . $key, $value);
+            }
+            
+            $countStmt->execute();
+            $totalCount = $countStmt->fetch(PDO::FETCH_ASSOC)['total'];
+            
+            // Now execute the main query with pagination
+            // Set pagination parameters as integers
+            $limit = (int)($filters['limit'] ?? 50);
+            $offset = (int)($filters['offset'] ?? 0);
+            
+            // Bind pagination parameters as integers
+            $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+            
+            // Bind other parameters
+            foreach ($params as $key => $value) {
+                $stmt->bindValue(':' . $key, $value);
+            }
+            
+            $stmt->execute();
             $notifications = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            // Calculate pagination
+            $totalPages = ceil($totalCount / $limit);
             
             // Process notifications to include parsed reference data
             foreach ($notifications as &$notification) {
@@ -150,7 +214,9 @@ class NotificationsController {
             
             return [
                 'success' => true,
-                'data' => $notifications
+                'notifications' => $notifications,
+                'total_count' => $totalCount,
+                'total_pages' => $totalPages
             ];
             
         } catch (Exception $e) {
@@ -822,6 +888,120 @@ class NotificationsController {
         } catch (Exception $e) {
             $this->logger->log('ERROR', 'Failed to save template: ' . $e->getMessage());
             return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Get a single template by id
+     */
+    public function getTemplateById($id) {
+        try {
+            $stmt = $this->pdo->prepare("SELECT * FROM notification_templates WHERE id = :id LIMIT 1");
+            $stmt->execute(['id' => $id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$row) {
+                return ['success' => false, 'message' => 'Template not found'];
+            }
+
+            return ['success' => true, 'template' => $row];
+        } catch (Exception $e) {
+            $this->logger->log('ERROR', 'Failed to get template by id: ' . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Update a notification template
+     */
+    public function updateTemplate($id, $data) {
+        try {
+            $stmt = $this->pdo->prepare("UPDATE notification_templates SET template_name = :name, template_code = :code, notification_type = :type, delivery_method = :method, subject_template = :subject, message_template = :message, is_active = :is_active WHERE id = :id");
+
+            $stmt->execute([
+                'name' => $data['name'],
+                'code' => $data['code'],
+                'type' => $data['type'],
+                'method' => $data['method'],
+                'subject' => $data['subject_template'] ?? null,
+                'message' => $data['message_template'],
+                'is_active' => isset($data['is_active']) ? (int)$data['is_active'] : 1,
+                'id' => $id
+            ]);
+
+            return ['success' => true, 'template_id' => $id];
+        } catch (Exception $e) {
+            $this->logger->log('ERROR', 'Failed to update template: ' . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Delete a notification template
+     */
+    public function deleteTemplate($id) {
+        try {
+            $stmt = $this->pdo->prepare("DELETE FROM notification_templates WHERE id = :id");
+            $stmt->execute(['id' => $id]);
+
+            if ($stmt->rowCount() === 0) {
+                return ['success' => false, 'message' => 'Template not found or already deleted'];
+            }
+
+            return ['success' => true];
+        } catch (Exception $e) {
+            $this->logger->log('ERROR', 'Failed to delete template: ' . $e->getMessage());
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Check if a template code exists (optionally excluding an id)
+     */
+    public function templateCodeExists($code, $excludeId = null) {
+        try {
+            if ($excludeId) {
+                $sql = "SELECT id FROM notification_templates WHERE template_code = :code AND id != :id LIMIT 1";
+                $params = ['code' => $code, 'id' => $excludeId];
+                error_log("DEBUG templateCodeExists: SQL = $sql, code = '$code', excludeId = $excludeId");
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute($params);
+            } else {
+                $sql = "SELECT id FROM notification_templates WHERE template_code = :code LIMIT 1";
+                $params = ['code' => $code];
+                error_log("DEBUG templateCodeExists: SQL = $sql, code = '$code'");
+                $stmt = $this->pdo->prepare($sql);
+                $stmt->execute($params);
+            }
+
+            $result = $stmt->fetch();
+            $exists = (bool)$result;
+            error_log("DEBUG templateCodeExists: Result = " . ($result ? "ID {$result['id']}" : "none") . ", exists = " . ($exists ? 'true' : 'false'));
+            return $exists;
+        } catch (Exception $e) {
+            $this->logger->log('ERROR', 'Failed to check template code existence: ' . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Return the id of a template that has the given code (optionally excluding an id)
+     */
+    public function getTemplateIdByCode($code, $excludeId = null) {
+        try {
+            if ($excludeId) {
+                $stmt = $this->pdo->prepare("SELECT id FROM notification_templates WHERE template_code = :code AND id != :id LIMIT 1");
+                $stmt->execute(['code' => $code, 'id' => $excludeId]);
+            } else {
+                $stmt = $this->pdo->prepare("SELECT id FROM notification_templates WHERE template_code = :code LIMIT 1");
+                $stmt->execute(['code' => $code]);
+            }
+
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ? intval($row['id']) : null;
+        } catch (Exception $e) {
+            $this->logger->log('ERROR', 'Failed to get template id by code: ' . $e->getMessage());
+            return null;
         }
     }
 }

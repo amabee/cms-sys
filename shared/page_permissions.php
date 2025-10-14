@@ -16,6 +16,7 @@ return [
   'dashboard.php' => ['admin', 'doctor', 'secretary', 'receptionist'],
   'dashboard_employee.php' => ['receptionist', 'secretary'],
   'profile.php' => ['admin', 'doctor', 'secretary', 'receptionist', 'patient'],
+  'security-management.php' => ['admin'],
 
   // User & system management
   'user-management.php' => ['admin'],

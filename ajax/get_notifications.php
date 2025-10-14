@@ -34,7 +34,18 @@ try {
         $filters['patient_id'] = $_GET['patient_id'];
     }
     
-    $result = $controller->getNotifications($filters, $page, $limit);
+    // Prepare pagination values inside filters for the controller
+    $filters['limit'] = $limit;
+    $filters['offset'] = ($page - 1) * $limit;
+
+    // Extract user_id and patient_id as explicit arguments (controller expects userId, patientId, filters)
+    $userId = isset($filters['user_id']) ? $filters['user_id'] : null;
+    $patientId = isset($filters['patient_id']) ? $filters['patient_id'] : null;
+
+    // Remove them from filters to avoid duplicate handling
+    unset($filters['user_id'], $filters['patient_id']);
+
+    $result = $controller->getNotifications($userId, $patientId, $filters);
     
     if ($result['success']) {
         echo json_encode([

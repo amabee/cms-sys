@@ -261,7 +261,7 @@ ob_start();
             <div class="tab-pane fade" id="templates" role="tabpanel">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="mb-0">Notification Templates</h6>
-                    <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#templateModal">
+                    <button id="add-template-btn" class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#templateModal">
                         <i class="bx bx-plus me-1"></i>Add Template
                     </button>
                 </div>
@@ -420,6 +420,7 @@ ob_start();
             </div>
             <div class="modal-body">
                 <form id="templateForm">
+                    <input type="hidden" id="template-id" value="">
                     <div class="row g-3 mb-3">
                         <div class="col-md-6">
                             <div class="form-floating">

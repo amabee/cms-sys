@@ -61,6 +61,23 @@ $(document).ready(function() {
             loadRecentNotifications(true); // Silent refresh
         }
     }, 30000);
+
+    // Clear template modal when Add Template is clicked
+    $('#add-template-btn').on('click', function() {
+        currentEditingTemplateId = null; // Clear global variable
+        $('#template-id').val('');
+        $('#templateForm')[0].reset();
+        // Ensure default selects are set
+        $('#template-type').val('appointment_reminder');
+        $('#template-method').val('email');
+    });
+
+    // Reset template modal when hidden to avoid stale ids
+    $('#templateModal').on('hidden.bs.modal', function () {
+        currentEditingTemplateId = null; // Clear global variable
+        $('#template-id').val('');
+        $('#templateForm')[0].reset();
+    });
 });
 
 // Load notification statistics
@@ -552,6 +569,9 @@ function displayTemplates(templates) {
     });
 }
 
+// Global variable to store current template ID being edited
+let currentEditingTemplateId = null;
+
 // Save template
 function saveTemplate() {
     const form = document.getElementById('templateForm');
@@ -559,6 +579,13 @@ function saveTemplate() {
         form.reportValidity();
         return;
     }
+    
+    // Use global variable instead of DOM element
+    const templateId = currentEditingTemplateId || $('#template-id').val();
+    console.log('DEBUG: saveTemplate() called');
+    console.log('DEBUG: currentEditingTemplateId:', currentEditingTemplateId);
+    console.log('DEBUG: templateId from DOM:', $('#template-id').val());
+    console.log('DEBUG: final templateId:', templateId);
     
     const data = {
         name: $('#template-name').val(),
@@ -568,7 +595,17 @@ function saveTemplate() {
         subject_template: $('#template-subject').val(),
         message_template: $('#template-message').val()
     };
+    // Include id in payload if present so server can choose update vs create
+    if (templateId && templateId !== '' && templateId !== '0') {
+        data.id = templateId;
+        console.log('DEBUG: Added id to data payload:', data.id);
+    } else {
+        console.log('DEBUG: templateId is empty/falsy, not adding to payload');
+    }
     
+    console.log('DEBUG: Full payload being sent:', data);
+    
+    // Always use the save endpoint - it handles both create and update based on presence of id
     $.ajax({
         url: '../ajax/save_notification_template.php',
         type: 'POST',
@@ -576,18 +613,153 @@ function saveTemplate() {
         dataType: 'json',
         success: function(response) {
             if (response.success) {
-                showAlert('Template saved successfully', 'success');
+                const action = templateId ? 'updated' : 'saved';
+                showAlert(`Template ${action} successfully`, 'success');
                 $('#templateModal').modal('hide');
                 form.reset();
+                $('#template-id').val('');
                 if (currentTab === 'templates') {
                     loadTemplates();
                 }
             } else {
-                showAlert('Error saving template: ' + response.message, 'danger');
+                const action = templateId ? 'updating' : 'saving';
+                var msg = `Error ${action} template: ` + response.message;
+                showAlert(msg, 'danger');
             }
         },
         error: function() {
-            showAlert('Failed to save template', 'danger');
+            const action = templateId ? 'update' : 'save';
+            showAlert(`Failed to ${action} template`, 'danger');
+        }
+    });
+}
+
+// Edit template - populate modal with template data
+function editTemplate(id) {
+    console.log('DEBUG: editTemplate called with id:', id);
+    $.ajax({
+        url: '../ajax/get_notification_template.php',
+        type: 'GET',
+        data: { id: id },
+        dataType: 'json',
+        success: function(response) {
+            console.log('DEBUG: editTemplate response:', response);
+            if (response.success) {
+                const t = response.template;
+                console.log('DEBUG: Setting template-id to:', t.id);
+                
+                // Show modal first, then populate fields
+                $('#templateModal').modal('show');
+                
+                // Wait a bit for modal to be fully rendered, then set values
+                setTimeout(function() {
+                    console.log('DEBUG: template-id element exists after modal show:', $('#template-id').length);
+                    
+                    // Set global variable for template ID
+                    currentEditingTemplateId = t.id;
+                    console.log('DEBUG: Set currentEditingTemplateId to:', currentEditingTemplateId);
+                    
+                    // If element doesn't exist, create it
+                    if ($('#template-id').length === 0) {
+                        console.log('DEBUG: Creating template-id element since it does not exist');
+                        $('#templateForm').prepend('<input type="hidden" id="template-id" value="">');
+                    }
+                    
+                    $('#template-id').val(t.id);
+                    console.log('DEBUG: template-id value after setting:', $('#template-id').val());
+                    $('#template-name').val(t.template_name);
+                    $('#template-code').val(t.template_code);
+                    $('#template-type').val(t.notification_type);
+                    $('#template-method').val(t.delivery_method);
+                    $('#template-subject').val(t.subject_template);
+                    $('#template-message').val(t.message_template);
+                }, 100);
+            } else {
+                showAlert('Error loading template: ' + response.message, 'danger');
+            }
+        },
+        error: function() {
+            showAlert('Failed to load template', 'danger');
+        }
+    });
+}
+
+// Preview template - show a simple modal with parsed message (preview uses test variables)
+function previewTemplate(id) {
+    $.ajax({
+        url: '../ajax/get_notification_template.php',
+        type: 'GET',
+        data: { id: id },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                const t = response.template;
+                // For preview, do a naive variable replace with example values
+                let preview = t.message_template;
+                preview = preview.replace(/{patient_name}/g, 'John Doe');
+                preview = preview.replace(/{doctor_name}/g, 'Dr. Smith');
+                preview = preview.replace(/{clinic_name}/g, 'HealthCare Clinic');
+
+                // Show preview in an alert modal
+                const modalHtml = `
+                    <div class="modal fade" id="templatePreviewModal" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Preview: ${escapeHtml(t.template_name)}</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+                                <div class="modal-body">
+                                    <p><strong>Subject:</strong> ${escapeHtml(t.subject_template || '')}</p>
+                                    <hr>
+                                    <div>${escapeHtml(preview)}</div>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-label-secondary" data-bs-dismiss="modal">Close</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                // Append and show modal
+                $('body').append(modalHtml);
+                const modalEl = document.getElementById('templatePreviewModal');
+                const bsModal = new bootstrap.Modal(modalEl);
+                bsModal.show();
+
+                modalEl.addEventListener('hidden.bs.modal', function () {
+                    $(modalEl).remove();
+                });
+            } else {
+                showAlert('Error loading template for preview: ' + response.message, 'danger');
+            }
+        },
+        error: function() {
+            showAlert('Failed to load template for preview', 'danger');
+        }
+    });
+}
+
+// Delete template
+function deleteTemplate(id) {
+    if (!confirm('Are you sure you want to delete this template? This action cannot be undone.')) return;
+
+    $.ajax({
+        url: '../ajax/delete_notification_template.php',
+        type: 'POST',
+        data: { id: id },
+        dataType: 'json',
+        success: function(response) {
+            if (response.success) {
+                showAlert('Template deleted successfully', 'success');
+                if (currentTab === 'templates') loadTemplates();
+            } else {
+                showAlert('Error deleting template: ' + response.message, 'danger');
+            }
+        },
+        error: function() {
+            showAlert('Failed to delete template', 'danger');
         }
     });
 }

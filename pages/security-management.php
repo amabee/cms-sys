@@ -4,7 +4,7 @@ $additional_css = [];
 $additional_js = [];
 
 include __DIR__ . '/../shared/secure_session_handler.php';
-requireRoleSecure(['admin']); // Only administrators can access
+requireRoleSecure(['admin']);
 
 // Initialize security controller
 require_once __DIR__ . '/../controllers/SecurityController.php';
