@@ -854,3 +854,10 @@ $content = ob_get_clean();
 include __DIR__ . '/../shared/layout.php';
 ?>
 
+<style>
+  /* Ensure SweetAlert2 toasts appear above modal backdrops */
+  .swal2-container, .swal2-container .swal2-toast {
+    z-index: 9999 !important;
+  }
+</style>
+

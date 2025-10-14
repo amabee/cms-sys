@@ -24,11 +24,12 @@ if (!$billing_id) {
 try {
     $controller = new BillingController();
     $result = $controller->getById($billing_id);
-    
-    if ($result['success']) {
-        echo json_encode(['success' => true, 'data' => $result['data']]);
+
+    // BillingController::getById returns the DB row as an associative array or null
+    if (is_array($result) && !empty($result)) {
+        echo json_encode(['success' => true, 'data' => $result]);
     } else {
-        echo json_encode(['success' => false, 'message' => $result['message']]);
+        echo json_encode(['success' => false, 'message' => 'Billing record not found']);
     }
     
 } catch (Exception $e) {
