@@ -27,13 +27,40 @@ if (isset($_GET['logged_out']) && $_GET['logged_out'] == '1') {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $username = sanitize($_POST['email'] ?? '');
   $password = $_POST['password'] ?? '';
+  $hcaptcha_response = $_POST['h-captcha-response'] ?? '';
 
   if (empty($username) || empty($password)) {
     $error_message = 'Please enter both username/email and password.';
+  } elseif (empty($hcaptcha_response)) {
+    $error_message = 'Please complete the CAPTCHA verification.';
   } else {
-    try {
-      $loginController = new Login();
-      if ($loginController->authenticate($username, $password)) {
+    // Verify hCaptcha
+    $hcaptcha_secret = HCAPTCHA_SECRET_KEY;
+    $hcaptcha_url = 'https://hcaptcha.com/siteverify';
+    $hcaptcha_data = [
+      'secret' => $hcaptcha_secret,
+      'response' => $hcaptcha_response,
+      'remoteip' => $_SERVER['REMOTE_ADDR']
+    ];
+
+    $hcaptcha_options = [
+      'http' => [
+        'method' => 'POST',
+        'header' => 'Content-Type: application/x-www-form-urlencoded',
+        'content' => http_build_query($hcaptcha_data)
+      ]
+    ];
+
+    $hcaptcha_context = stream_context_create($hcaptcha_options);
+    $hcaptcha_result = file_get_contents($hcaptcha_url, false, $hcaptcha_context);
+    $hcaptcha_json = json_decode($hcaptcha_result, true);
+
+    if (!$hcaptcha_json['success']) {
+      $error_message = 'CAPTCHA verification failed. Please try again.';
+    } else {
+      try {
+        $loginController = new Login();
+        if ($loginController->authenticate($username, $password)) {
         // Redirect based on user type (clinic roles)
         $userType = $_SESSION['user_type'] ?? '';
         switch ($userType) {
@@ -56,11 +83,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             redirect('index.php', 'Login successful!', 'success');
             break;
         }
-      } else {
-        $error_message = 'Invalid username/email or password.';
+        } else {
+          $error_message = 'Invalid username/email or password.';
+        }
+      } catch (Exception $e) {
+        $error_message = "Login failed. Please try again later. {$e->getMessage()}";
       }
-    } catch (Exception $e) {
-      $error_message = "Login failed. Please try again later. {$e->getMessage()}";
     }
   }
 }
@@ -87,6 +115,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <!-- Core CSS -->
   <link rel="stylesheet" href="assets/vendor/css/core.css" class="template-customizer-core-css" />
   <link rel="stylesheet" href="assets/vendor/css/pages/page-auth.css" />
+
+  <!-- hCaptcha -->
+  <script src="https://js.hcaptcha.com/1/api.js" async defer></script>
 </head>
 
 <body>
@@ -139,6 +170,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   <input class="form-check-input" type="checkbox" id="remember-me" />
                   <label class="form-check-label" for="remember-me"> Remember Me </label>
                 </div>
+              </div>
+              <!-- hCaptcha -->
+              <div class="mb-3">
+                <div class="h-captcha" data-sitekey="<?= HCAPTCHA_SITE_KEY ?>"></div>
               </div>
               <div class="mb-3">
                 <button class="btn btn-primary d-grid w-100" type="submit">Sign in</button>

@@ -12,6 +12,9 @@ define('APP_NAME', 'Clinic Management System');
 define('APP_VERSION', '1.0.0');
 define('TIMEZONE', 'Asia/Manila');
 
+// hCaptcha configuration
+define('HCAPTCHA_SITE_KEY', '0d9658da-7e3e-4208-a160-e39c5f0e66ce');
+define('HCAPTCHA_SECRET_KEY', 'ES_f97ecd1d57764475b12f852ba6847111'); 
 
 // Set timezone
 date_default_timezone_set(TIMEZONE);

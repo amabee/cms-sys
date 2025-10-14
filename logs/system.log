@@ -16,3 +16,5 @@
 [2025-10-14 07:16:13] action=LOGIN user_id=1 message=auth_event
 [2025-10-14 08:17:11] action=login user_id=NULL message=Failed to update last_login
 [2025-10-14 08:17:11] action=LOGIN user_id=2 message=auth_event
+[2025-10-14 08:35:54] action=login user_id=NULL message=Failed to update last_login
+[2025-10-14 08:35:54] action=LOGIN user_id=2 message=auth_event
