@@ -221,6 +221,8 @@ function displayPatients(patients) {
 function viewPatientDetails(patientId) {
     currentPatientId = patientId;
     
+    console.log('Viewing patient details for ID:', patientId);
+    
     // Show modal with loading
     const modal = new bootstrap.Modal(document.getElementById('patientModal'));
     modal.show();
@@ -233,27 +235,131 @@ function viewPatientDetails(patientId) {
         </div>
     `);
     
-    // Load patient details
+    // Load patient basic details using get_patient.php instead
     $.ajax({
-        url: '../ajax/get_patient_dashboard.php',
+        url: '../ajax/get_patient.php',
         type: 'GET',
-        data: { patient_id: patientId },
+        data: { id: patientId },
         dataType: 'json',
         success: function(response) {
+            console.log('Patient details response:', response);
+            
             if (response.success && response.data) {
-                displayPatientDetails(response.data);
+                displayPatientBasicInfo(response.data);
             } else {
+                console.error('Failed to load patient details:', response.message);
                 $('#patientDetailsContent').html(`
-                    <div class="alert alert-danger">Failed to load patient details</div>
+                    <div class="alert alert-danger">
+                        <i class="bx bx-error me-2"></i>
+                        Failed to load patient details: ${response.message || 'Unknown error'}
+                    </div>
                 `);
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error('Error loading patient details:', error);
+            console.error('Response:', xhr.responseText);
             $('#patientDetailsContent').html(`
-                <div class="alert alert-danger">Error loading patient details</div>
+                <div class="alert alert-danger">
+                    <i class="bx bx-error me-2"></i>
+                    Error loading patient details
+                </div>
             `);
         }
     });
+}
+
+/**
+ * Display patient basic information in modal
+ */
+function displayPatientBasicInfo(patient) {
+    const age = calculateAge(patient.date_of_birth);
+    
+    let html = `
+        <!-- Patient Info -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h6 class="text-primary mb-3">Personal Information</h6>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Full Name</label>
+                <p class="mb-0">${escapeHtml(patient.first_name + ' ' + patient.last_name)}</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Patient ID</label>
+                <p class="mb-0">${escapeHtml(patient.patient_id || patient.id)}</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Date of Birth</label>
+                <p class="mb-0">${formatDate(patient.date_of_birth)} (${age} years)</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Gender</label>
+                <p class="mb-0">${capitalize(patient.gender || 'N/A')}</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Blood Group</label>
+                <p class="mb-0">${escapeHtml(patient.blood_group || 'Not specified')}</p>
+            </div>
+            <div class="col-md-4 mb-3">
+                <label class="form-label fw-bold">Phone</label>
+                <p class="mb-0">${escapeHtml(patient.phone || 'N/A')}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Email</label>
+                <p class="mb-0">${escapeHtml(patient.email || 'N/A')}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Address</label>
+                <p class="mb-0">${escapeHtml(patient.address || 'Not provided')}</p>
+            </div>
+        </div>
+        
+        <!-- Medical Information -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h6 class="text-primary mb-3">Medical Information</h6>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Allergies</label>
+                <p class="mb-0">${escapeHtml(patient.allergies || 'None reported')}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Medical History</label>
+                <p class="mb-0">${escapeHtml(patient.medical_history || 'No history recorded')}</p>
+            </div>
+        </div>
+        
+        <!-- Emergency Contact -->
+        <div class="row mb-3">
+            <div class="col-12">
+                <h6 class="text-primary mb-3">Emergency Contact</h6>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Contact Name</label>
+                <p class="mb-0">${escapeHtml(patient.emergency_contact_name || 'Not provided')}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Contact Phone</label>
+                <p class="mb-0">${escapeHtml(patient.emergency_contact_phone || 'Not provided')}</p>
+            </div>
+        </div>
+        
+        <!-- Insurance -->
+        ${patient.insurance_info ? `
+        <div class="row">
+            <div class="col-12">
+                <h6 class="text-primary mb-3">Insurance Information</h6>
+            </div>
+            <div class="col-12 mb-3">
+                <label class="form-label fw-bold">Insurance Details</label>
+                <p class="mb-0">${escapeHtml(patient.insurance_info)}</p>
+            </div>
+        </div>
+        ` : ''}
+    `;
+    
+    $('#patientDetailsContent').html(html);
 }
 
 /**

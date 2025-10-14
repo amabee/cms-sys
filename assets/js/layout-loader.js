@@ -248,14 +248,6 @@ function getDoctorSidebar() {
                     <div data-i18n="Medical Records">Medical Records</div>
                 </a>
             </li>
-
-            <!-- Prescriptions -->
-            <li class="menu-item ${currentPage === 'doctor-prescriptions.html' ? 'active' : ''}">
-                <a href="doctor-prescriptions.html" class="menu-link">
-                    <i class="menu-icon tf-icons bx bx-receipt"></i>
-                    <div data-i18n="Prescriptions">Prescriptions</div>
-                </a>
-            </li>
         </ul>
     `;
 }

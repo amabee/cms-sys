@@ -69,3 +69,9 @@
 >>>>>>> Stashed changes
 [2025-10-14 22:38:26] action=login user_id=NULL message=Failed to update last_login
 [2025-10-14 22:38:26] action=LOGIN user_id=4 message=auth_event
+[2025-10-15 06:38:55] action=Failed to get dashboard data: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'lt.ordered_by' in 'on clause' user_id=ERROR message=
+[2025-10-15 06:40:07] action=Failed to get dashboard data: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'lt.ordered_by' in 'on clause' user_id=ERROR message=
+[2025-10-15 06:47:59] action=Failed to get dashboard data: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'lt.ordered_by' in 'on clause' user_id=ERROR message=
+[2025-10-15 06:48:07] action=Failed to get dashboard data: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'lt.ordered_by' in 'on clause' user_id=ERROR message=
+[2025-10-15 06:55:00] action=Failed to get dashboard data: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'lt.ordered_by' in 'on clause' user_id=ERROR message=
+[2025-10-15 06:55:08] action=Failed to get dashboard data: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'lt.ordered_by' in 'on clause' user_id=ERROR message=

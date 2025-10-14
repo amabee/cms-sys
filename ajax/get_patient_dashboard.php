@@ -16,10 +16,13 @@ $controller = new PatientPortalController();
 try {
     $patient_id = $_GET['patient_id'] ?? null;
     
-    // If user is admin, they can view any patient's dashboard
-    if ($_SESSION['role'] === 'admin' && $patient_id) {
+    // Check user type - handle both 'role' (old) and 'user_type' (new)
+    $userType = $_SESSION['user_type'] ?? $_SESSION['role'] ?? null;
+    
+    // If user is admin or doctor, they can view any patient's dashboard
+    if (($userType === 'admin' || $userType === 'doctor') && $patient_id) {
         // Use provided patient_id
-    } else if ($_SESSION['role'] === 'patient') {
+    } else if ($userType === 'patient') {
         // Use session patient_id
         $patient_id = $_SESSION['patient_id'] ?? null;
     } else {
